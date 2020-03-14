@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import cv2
 from matplotlib import pyplot as plt
+import matplotlib.pylab as pylab
 import os
 import sys
 
@@ -23,6 +24,7 @@ def save_results(folder, res_folder, expert_mode = False, output_table_format = 
     if output_table_format not in ['xls','csv']:
         print('Output table format should be xls or csv.')
     
+    prepare_scene()
     names = os.listdir(path='./'+folder)
     cols = ['area','white_area','Q',
             'angle','symmetry','big_object']
@@ -499,3 +501,12 @@ if __name__ == "__main__":
         print('Other args ignored.')
     save_results(folder,res_folder,expert_mode,output_table_format,output_image_format)
     sys.exit()
+    
+def prepare_scene(w = 20, h = 5):
+    params = {'legend.fontsize': 'x-large',
+              'figure.figsize': (w, h),
+              'axes.labelsize': 'x-large',
+              'axes.titlesize':'x-large',
+              'xtick.labelsize':'x-large',
+              'ytick.labelsize':'x-large'}
+    pylab.rcParams.update(params)
