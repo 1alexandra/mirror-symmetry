@@ -86,3 +86,28 @@ def hull_based_index(u, delta = None, middle_iters = 1):
         hull_delta += list(index_neighbors(u, u[ind], delta))
     hull2 = np.unique(np.ravel(np.array(hull_delta,dtype = int).T))
     return np.arange(len(u))[hull2], np.arange(len(u))[hull1]
+    
+def f_abs_based_index(f, alpha = 0, beta = 1, ret_zero = False):
+    """
+    input:
+    f -- complex array, Fourier Descriptor,
+    alpha -- double, 0..1,
+    beta -- double, 0..1,
+    ret_zero -- bool, if False, 0 is excluded from result 
+    output:
+    array of indexes 'ind' of FD, where abs(f) >= 'eps' and
+        'ind' in the first or the last len(f)*beta/2 coefficients,
+        alpha = 0 => eps = min(abs(f[1:])),
+        alpha = 1 => eps = max(abs(f[1:])),
+        eps(alpha) is linear.
+    """
+    N = len(f)
+    a1 = np.min(np.abs(f[1:]))
+    a2 = np.max(np.abs(f[1:]))
+    eps = a1+(a2-a1)*alpha
+    garms = N*beta   
+    ind = np.arange(N)
+    crit_1 = np.abs(f) >= eps
+    crit_1[0] = ret_zero
+    crit_2 = np.logical_or(ind <= garms/2, ind >= N-garms/2)
+    return ind[crit_1 * crit_2]

@@ -189,24 +189,9 @@ def many_objects(Q, folder, res_folder, output_image_format = None):
     plt.show()
 
 
-def new_start_point(f, s, f_ind=None):
-    N = len(f)
-    if f_ind is None:
-        f_ind = np.arange(1,N)
-    pows = -1j*2*np.pi/N*f_ind*s
-    return f[f_ind]*np.exp(pows)
 
-def filter_f(g, alpha = 0, beta = 1, ret_zero = False):
-    a1 = np.min(np.abs(g[1:]))
-    a2 = np.max(np.abs(g[1:]))
-    eps = a1+(a2-a1)*alpha
-    N = len(g)
-    garms = N*beta   
-    tmp = np.arange(N)
-    index = (np.abs(g)>=eps)*(np.logical_or(tmp<=garms/2,tmp>=N-garms/2))
-    if not ret_zero:
-        index *= index > 0
-    return tmp[index]
+
+
 
 
     
