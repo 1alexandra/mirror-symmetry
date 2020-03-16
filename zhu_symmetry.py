@@ -90,7 +90,7 @@ def hull_based_index(u, delta = None, middle_iters = 1):
 def f_abs_based_index(f, alpha = 0, beta = 1, ret_zero = False):
     """
     input:
-    f -- complex array, Fourier Descriptor,
+    f -- complex array, Fourier Descriptor (FD),
     alpha -- double, 0..1,
     beta -- double, 0..1,
     ret_zero -- bool, if False, 0 is excluded from result 
@@ -111,3 +111,20 @@ def f_abs_based_index(f, alpha = 0, beta = 1, ret_zero = False):
     crit_1[0] = ret_zero
     crit_2 = np.logical_or(ind <= garms/2, ind >= N-garms/2)
     return ind[crit_1 * crit_2]
+    
+def measure_axis(theta, dots, N): ### здесь не было theta!
+    """
+    input:
+    theta -- angle of measuring axis to x-axis, radians,
+    dots -- array of complex, Fourier Descriptor (FD) 
+        subsequence of coefficients, 
+    N -- contour points number (in order to normalize),
+    output:
+    double, measure
+    """
+    b = np.imag(dots * np.exp(-1j*theta))
+    # было (np.sum(b*b)/N)**0.5
+    ### TODO может быть нормировать на количество точек?
+    ### TODO может быть нормировать на max(abs(dot))?
+    ### TODO может быть смотреть не на квадрат мнимой части, а на модуль?
+    return (np.sum(b*b))**0.5 / N
