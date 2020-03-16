@@ -54,22 +54,26 @@ def get_contours(image, get_all = False):
         contours = [contours[np.argmax(measure)]]
     return [cnt_to_u(cnt) for cnt in contours]
 
-def add_middles(u, iters=1): ### можно переписать эффективнее для iters > 1
+def preprocess(u, mid_iters = 1):
     """
-    input:
-    u -- array of complex, contour points,
-    iters=1 -- int, number of iterations,
+    input: 
+    u -- complex array, contour points,
+    mid_iters -- int,
     output:
-    u_new -- array of complex.
-    'iters' times adding to contour points edge centers 
+    preprocessed u, comlex array:
+        max(abs(u)) = 1,
+        min(re(u)) = min(im(u)) = 0;
+        'mid_iters' times added contour edge centers.
     """
-    u0 = u.copy()
-    for iter_num in range(iters):
-        u1 = []
-        for i in range(len(u0)):
-            u1 += [u0[i], (u0[i]+u0[(i+1)%len(u0)])/2]
-        u0 = u1.copy()
-    return np.array(u1,dtype=complex)
+    u -= np.min(np.real(u)) + np.min(np.imag(u)) * 1j
+    u /= np.max(np.abs(u))
+    u_m = []
+    parts = 2 ** mid_iters
+    steps = (1/parts) * np.arange(parts)
+    for i in range(len(u)):
+        vec = u[(i+1)%len(u)] - u[i]
+        u_m += list(u[i] + steps * vec)
+    return np.array(u_m)
     
 def index_neighbors(u, z, delta = 5):
     """
