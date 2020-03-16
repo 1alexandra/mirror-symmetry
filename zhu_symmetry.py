@@ -117,7 +117,7 @@ def f_abs_based_index(f, alpha = 0, beta = 1, ret_zero = False):
     crit_1 = np.abs(f) >= eps
     crit_1[0] = ret_zero
     crit_2 = np.logical_or(ind <= garms/2, ind >= N-garms/2)
-    return ind[crit_1 * crit_2]
+    return ind[crit_1 * crit_2], eps, garms
     
 def measure_axis(theta, dots, N): ### здесь не было theta!
     """
@@ -174,19 +174,6 @@ def find_sym(u, plot_q = False, delta = None, q_thresh = 100,
             for el in hull:
                 x, y = np.real(u[-el]), np.imag(u[-el])
                 cv2.circle(tmp_img,(c*int(x),c*int(y)),line*2,(255,255,0),line)
-    if plot_q:
-
-        
-#         thrs_abs_sum = [rotate_calc(new_start_point(f, s), N, ret_abs_sum = True) for s in range(N)]
-#         plt.plot(thrs_abs_sum,label = 'abs(sum)')
-#         ind_min = np.argmin(thrs_abs_sum)
-#         plt.plot([ind_min],[thrs_abs_sum[ind_min]],'bo', label = 'min abs(sum)')
-#         thrs_sum_abs = [rotate_calc(new_start_point(f, s), N, ret_sum_abs = True) for s in range(N)]
-#         plt.plot(thrs_sum_abs,label = 'sum(abs)')
-#         ind_min = np.argmin(thrs_sum_abs)
-#         plt.plot([ind_min],[thrs_sum_abs[ind_min]],'bo', label = 'min sum(abs)')
-        
-        plt.legend()
         if not name is None:
             plt.savefig(name[:-4]+'_q.png',format='png',bbox_inches='tight')
         plt.show()

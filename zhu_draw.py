@@ -108,15 +108,14 @@ def plot_measure(q):
     plt.title('Asymmetry measure for contour points')
     plt.xlabel('p - point index')
     plt.ylabel('Q - asymmetry measure')
-    plt.grid()
     plt.plot(q, label = 'Q(p)')
     plt.plot([ind], [q[ind]], 'ro', 
              label = 'min(Q) = ' + str(round(q[ind],3)))
+    plt.grid()
+    plt.legend()
     
 def plot_hull(u, u_h, h, m):
     plt.title('Hull based search')
-    plt.grid()
-    centroid = u.mean()
     contour(u, 'plt', label = 'contour points', dot_style = 'go', draw_zero = False)
     contour(m, 'plt', label = 'nearest to centroid-CH edge center line', 
             dot_style = 'co', draw_line = False, draw_zero = False)
@@ -126,6 +125,24 @@ def plot_hull(u, u_h, h, m):
             line_color = 'yellow', draw_zero = False)     
     contour(u_h, 'plt', label = 'points to search axis', dot_style = 'b+', 
             draw_line = False, draw_zero = False)  
+    centroid = u.mean()
     plt.plot([np.real(centroid)],[np.imag(centroid)],'yo',label='centroid')
+    plt.grid()
     plt.legend()
+    
+def plot_f_abs(f, eps, garms, ind):
+    plt.title("FD coefficients' importance")
+    plt.xlabel('l - coefficien index (l>0)')
+    plt.ylabel('importance')
+    g = np.log(np.abs(f[1:]))
+    left, right = -1, len(f)
+    up, down = np.max(g) + 1, np.min(g) - 1
+    plt.plot(np.arange(1,len(f)), g, label='log|f|')
+    plt.plot([left, right],[np.log(eps), np.log(eps)], 'c--')
+    plt.plot([garms//2, garms//2],[down, up], 'c-.')
+    plt.plot([len(f)-garms//2, len(f)-garms//2],[down, up], 'c-.')
+    plt.plot(ind, np.log(f[ind]), 'go')
+    plt.grid()
+    plt.legend()
+    
     
