@@ -6,6 +6,13 @@ import matplotlib.pylab as pylab
 from zhu_contour import u_to_cnt
 
 def prepare_scene(w=20, h=5):
+    """
+    input:
+    w, h -- plt figsize
+    output:
+    None.
+    Prettify diagrams for science reports.
+    """
     params = {'legend.fontsize': 'x-large',
               'figure.figsize': (w, h),
               'axes.labelsize': 'x-large',
@@ -20,13 +27,33 @@ def contour(u,
             show = True,
             label = 'U',
             dot_style = 'go',
-            draw_line = False, 
+            draw_line = True, 
             line_color = 'gray',
-            line_w = 1,
-            draw_zero = False, 
+            draw_zero = True, 
             zero_style = 'ro',
+            line_w = 1,
             cmap = 'gray'
            ):
+    """
+    input:
+    u -- complex array, contour points,
+    method -- plt or cv2,
+    margin -- 0..1, white space from the borders,
+    show -- if True, plt show,
+    only for plt mothod:
+    label -- plt label,
+    dot_style -- contour points plt marker style,
+    draw_line -- bool, if True, contour edges draw,
+    line_color -- plt colot of contour edges, if draw_line is True,
+    draw_zero -- bool, if True, (0+0j) point draw,
+    zero_style -- zero plt marker style, if draw_zero is True,
+    only for cv2 method:
+    line_w -- contour line width,
+    cmap -- plt cmap to imshow.
+    output:
+    if plt method, None,
+    if cv2 method, cv2 image
+    """
     left, right = np.min(np.real(u)), np.max(np.real(u))
     down, up = np.min(np.imag(u)), np.max(np.imag(u))
     margin = (int)(max(right-left,up-down)*margin+1)
@@ -63,6 +90,17 @@ def contour(u,
         return tmp_img
 
 def imshow_bw(img, title = '', cmap = 'gray', ax = None, show = True):
+    """
+    input:
+    img -- cv2 image,
+    title -- plt title,
+    cmap -- plt cmap,
+    ax -- None of plt ax,
+    show -- if True, plt show,
+    output:
+    None.
+    Imshow img to plt or ax.
+    """
     if ax is None:
         plt.title(title)
         plt.xticks([])

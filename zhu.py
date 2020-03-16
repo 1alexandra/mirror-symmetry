@@ -6,28 +6,29 @@ import matplotlib.pylab as pylab
 import os
 import sys
 
+import zhu_contour
+import zhu_symmetry
+import zhu_draw
 
-def save_results(folder, res_folder, expert_mode = False, output_table_format = 'csv', output_image_format = None):  
-
+def save_results(path, expert_mode = False, **kwargs):  
     """
     input: 
-    folder --- path to folder with images (any format: png, bmp, jpg, ...). Folder should contain ONLY images.
-    res_folder --- path to folder for saving results.
-    expert_mode --- if if is True, after every image you should tape your opinion about it. 
-                        If it contains 'p' or 'P' letter, image will be marked as plane.
-    output_table_format --- it should be only csv or xls.
-    output_image_format --- if it is not None, image in chosen format will be saved 
-                            (eps, jpeg, jpg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff).                            
-    output:   None
+    path --- path to folder with images (any format: png, bmp, jpg, ...). 
+    expert_mode --- True => after every image you should tape your opinion: 
+            If it contains 'p' or 'P' letter, image will be marked as plane.
+                        
+    output:   
+    None
     """
-    
-    if output_table_format not in ['xls','csv']:
-        print('Output table format should be xls or csv.')
-    
-    prepare_scene()
-    names = os.listdir(path='./'+folder)
-    cols = ['area','white_area','Q',
-            'angle','symmetry','big_object']
+    names = os.listdir(path='./'+path)
+    cols = [
+            'area',
+            'white_area',
+            'Q',
+            'angle',
+            'symmetry',
+            'big_object'
+           ]
     if expert_mode:
         cols += ['plane']
     df = pd.DataFrame([],index = names, columns = cols)
@@ -41,8 +42,8 @@ def save_results(folder, res_folder, expert_mode = False, output_table_format = 
     delta = 2.5
     area_thresh = 0.12
     theta_thresh = 10
-    if not os.path.isdir(res_folder):
-        os.mkdir(res_folder)
+    
+    prepare_scene()
     for name in names:
         img = binary(cv2.imread(folder+'/'+name,0))
         imshow_bw(img,name,'gray')
@@ -103,12 +104,9 @@ def save_results(folder, res_folder, expert_mode = False, output_table_format = 
             is_plane = 'p' in res or 'P' in res
             vec += [is_plane]
         df.loc[name] = vec
-    table_path = res_folder+'/masks.'+output_table_format
+    table_path = path + '/masks.csv'
     open(table_path, 'a').close()
-    if output_table_format == 'xls':
-        df.to_excel(table_path,columns=df.columns)
-    elif output_table_format == 'csv':
-        df.to_csv(table_path,columns=df.columns)
+    df.to_csv(table_path,columns=df.columns)
 
 def many_objects(Q, folder, res_folder, output_image_format = None):  
 
@@ -123,21 +121,8 @@ def many_objects(Q, folder, res_folder, output_image_format = None):
                             (eps, jpeg, jpg, pdf, pgf, png, ps, raw, rgba, svg, svgz, tif, tiff).                            
     output:   None
     """
-    
-    names = os.listdir(path='./'+folder)
-    cols = ['area','white_area','Q',
-            'angle','symmetry','big_object']
-    df = pd.DataFrame([],index = names, columns = cols)
-        
-    Q_thresh = np.inf
-    true_Q_thresh = Q
-    alpha = 0
-    beta = 1
-    delta = 2.5
-    area_thresh = 0.01
-    theta_thresh = 10
-    if not os.path.isdir(res_folder):
-        os.mkdir(res_folder)
+    prepare_scene()
+       
     imgs = []
     for name in names:
         res = cv2.imread(folder+'/'+name,0)
@@ -202,64 +187,6 @@ def many_objects(Q, folder, res_folder, output_image_format = None):
                     'result.' + output_image_format,
                     format = output_image_format)
     plt.show()
-    
-def binary(img):
-    img = cv2.GaussianBlur(img, (5,5), 0)
-    img_new = np.array(img,dtype=np.uint8)
-    if img[0,0] == 255:
-        img_new = 255-img_new
-    img_new *= (int)(255 / np.max(img_new))
-    if len(np.unique(img)) != 2:
-        img_new = cv2.adaptiveThreshold(img_new,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,5,0)
-    return img_new
-
-
-def external_cnt(img, line = 1, many = False):
-    img1 = binary(img)
-    contours, hierarchy = cv2.findContours(img1,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    if not many:
-        mesure = [cv2.contourArea(cnt) for cnt in contours]
-        cnt = contours[np.argmax(mesure)].reshape((-1,2))
-        u = cnt[:,0] + 1j * cnt[:,1]
-        tmp_img = np.zeros(img.shape)
-        cv2.drawContours(tmp_img,contours,np.argmax(mesure),255,line)
-        return u, tmp_img
-    ans = []
-    for i, cur_cnt in enumerate(contours):
-        cnt = cur_cnt.reshape((-1,2))
-        u = cnt[:,0] + 1j * cnt[:,1]
-        tmp_img = np.zeros(img.shape)
-        cv2.drawContours(tmp_img,contours,i,255,line)
-        ans.append((u, tmp_img))
-    return ans
-
-
-def u_to_cnt(u):
-    return np.array([[np.real(u),np.imag(u)]]).T.reshape((-1,1,2)).astype(np.int32)
-
-
-def add_middles(u, iters=1):
-    u0 = u.copy()
-    for iter_num in range(iters):
-        u1 = []
-        for i in range(len(u0)):
-            u1.append(u0[i])
-            if i!=len(u0)-1:
-                u1.append((u0[i]+u0[i+1])/2)
-            else:
-                u1.append((u0[-1]+u0[0])/2)
-        u0 = u1.copy()
-    return np.array(u1,dtype=complex)
-
-
-def u_delta(u,x,y,delta):
-    if delta is None:
-        return np.arange(len(u))
-    u_step = np.array(list(u[1:])+[u[0]])
-    tmp = max(np.min(np.abs(u_step-u)),0.5)
-    delta_new = delta/tmp
-    z = x + 1j * y
-    return np.arange(len(u))[np.abs(u-z) <= delta_new]
 
 
 def new_start_point(f, s, f_ind=None):
@@ -281,30 +208,7 @@ def filter_f(g, alpha = 0, beta = 1, ret_zero = False):
         index *= index > 0
     return tmp[index]
 
-def find_theta(dots_arr):
-    a = np.real(dots_arr)
-    b = np.imag(dots_arr)
-    k1 = np.sum(b*b)
-    k2 = np.sum(a*a)
-    k3 = 2*np.sum(a*b)
-    f = lambda t: k1*np.cos(t)**2+k2*np.sin(t)**2+2*k3*np.sin(t)*np.cos(t)
-    if k1 == k2:
-        if k3 == 0:
-            print('find_theta error: no way')
-            return 0
-        t1 = np.pi/4
-    elif k3 == 0:
-        t1 = 0
-    else:
-        t1 = 0.5 * np.arctan(k3/(k1-k2))
-    t2 = t1 + 0.5 * np.pi
-    if f(t1)<f(t2):
-        if f(0)>f(t1):
-            return -t1 % np.pi
-    else:
-        if f(0)>f(t2):
-            return -t2 % np.pi
-    return 0
+
     
 def rotate_calc(dots_arr, N, ret_theta = False, ret_abs_sum = False, ret_sum_abs = False):
     theta = find_theta(dots_arr)
@@ -322,39 +226,7 @@ def rotate_calc(dots_arr, N, ret_theta = False, ret_abs_sum = False, ret_sum_abs
     return thr
 
 
-def hull_based_index(u,delta):
-    if delta is None:
-        return np.arange(len(u)),np.array([],dtype=int)
-    cnt = np.array([np.real(u) * 2, np.imag(u) * 2], dtype=int).T
-    cnt = cnt.reshape((-1,2))
-    hull0 = cv2.convexHull(cnt, returnPoints=False)
-    centroid = np.mean(u)
-    hull0 = np.ravel(hull0)
-    hull_u = u[hull0]
-    middles0 = []
-    for i in range(len(hull0)):
-        next_i = (i+1)%len(hull_u)
-        bet_z = np.mean([hull_u[i],hull_u[next_i]])
-        re_z1, im_z1 = np.real(bet_z), np.imag(bet_z)
-        re_z2, im_z2 = np.real(centroid), np.imag(centroid)
-        end = hull0[i]
-        start = hull0[next_i]
-        if start > end:
-            ind = np.concatenate((np.arange(start,len(u)),np.arange(0,end)))
-        else:
-            ind = np.arange(start,end)
-        tmp = u[ind]
-        dists_min = np.argmin(np.abs((im_z2-im_z1)*np.real(tmp)-(re_z2-re_z1)*np.imag(tmp)+im_z1*re_z2-im_z2*re_z1))
-        ind = ind[dists_min]
-        middles0.append(ind)
-    middles0 = np.array(middles0)
-    hull1 = np.unique(np.ravel(np.array([hull0,middles0],dtype = int).T))
-    hull_delta = []
-    for ind in hull1:
-        el = u[ind]
-        hull_delta += list(u_delta(u,np.real(el),np.imag(el),delta))
-    hull2 = np.unique(np.ravel(np.array(hull_delta,dtype = int).T))
-    return len(u)-1-np.arange(len(u))[hull2], len(u)-1-np.arange(len(u))[hull1]
+
 
 
 def another_sym_line(u1, show=True, plot_thr=False, delta=None, line=1, thresh=100,
@@ -438,75 +310,3 @@ def another_sym_line(u1, show=True, plot_thr=False, delta=None, line=1, thresh=1
     return tmp_img, x-np.real(vec), y-np.imag(vec), theta, thr, -true_index
 
 
-def draw_ifft(f,show = False,line=1,margin=10):
-    u = np.fft.ifft(f)
-    h = (int)(np.max(np.real(u))) + margin
-    w = (int)(np.max(np.imag(u))) + margin
-    tmp_img = np.zeros((w,h))
-    cnt = u_to_cnt(u)
-    cv2.drawContours(tmp_img,[cnt],0,255,line)
-    if show:
-        plt.imshow(tmp_img,cmap='gray')
-        plt.show()
-    return tmp_img
-
-
-def draw_complex(u, draw_zero = False, draw_line = False, label = '',show = True):
-    x1 = min(np.min(np.real(u)),np.min(np.imag(u)))-50
-    x2 = max(np.max(np.real(u)),np.max(np.imag(u)))+50
-    plt.xlim(x1,x2)
-    plt.ylim(x1,x2)
-    plt.axis('equal')
-    if draw_line:
-        x = np.zeros(len(u)+1)
-        x[:-1] = np.real(u)
-        x[-1] = np.real(u[0])
-        y = np.zeros(len(u)+1)
-        y[:-1] = np.imag(u)
-        y[-1] = np.imag(u[0])
-        plt.plot(x,y,color='gray')
-    plt.plot(np.real(u),np.imag(u),'go',label = label)
-    if draw_zero:
-        plt.plot([0],[0],"ro",label = 'zero')
-    if label!='':
-        plt.legend()
-    if show:
-        plt.show()
-
-        
-def imshow_bw(img, title = '', cmap = 'gray', ax = None):
-    if ax is None:
-        plt.title(title)
-        plt.xticks([])
-        plt.yticks([])
-        plt.imshow(255-img, cmap=cmap)
-    else:
-        ax.set_title(title,fontsize= 30)
-        ax.imshow(255-img, cmap=cmap)
-
-
-if __name__ == "__main__":
-    expert_mode = False
-    output_table_format = 'csv'
-    output_image_format = None
-    folder = sys.argv[1]
-    res_folder = sys.argv[2]
-    if len(sys.argv) > 3:
-        expert_mode = sys.argv[3] in ['True','true','1','on']
-    if len(sys.argv) > 4:
-        output_table_format = sys.argv[4]
-    if len(sys.argv) > 5:
-        output_image_format = sys.argv[5]
-    if len(sys.argv) > 6:
-        print('Other args ignored.')
-    save_results(folder,res_folder,expert_mode,output_table_format,output_image_format)
-    sys.exit()
-    
-def prepare_scene(w = 20, h = 5):
-    params = {'legend.fontsize': 'x-large',
-              'figure.figsize': (w, h),
-              'axes.labelsize': 'x-large',
-              'axes.titlesize':'x-large',
-              'xtick.labelsize':'x-large',
-              'ytick.labelsize':'x-large'}
-    pylab.rcParams.update(params)
