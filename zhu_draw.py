@@ -26,6 +26,8 @@ def contour(u,
             margin = 0.1,
             label = 'U',
             dot_style = 'go',
+            draw_line = True,
+            line_color = 'gray',
             draw_zero = True, 
             line_w = 1,
             cmap = 'gray'
@@ -38,6 +40,8 @@ def contour(u,
     only for plt mothod:
     label -- plt label,
     dot_style -- contour points plt marker style,
+    draw_line -- bool, if True, gray edges draw,
+    line_color -- plt color, if draw_line is True,
     draw_zero -- bool, if True, (0+0j) point draw,
     only for cv2 method:
     line_w -- contour line width,
@@ -52,16 +56,19 @@ def contour(u,
     x1 = min(left, down) - margin
     x2 = max(up, right) + margin
     if method == 'plt':
+        plt.xlabel('Re')
+        plt.ylabel('Im')
         plt.xlim(x1,x2)
         plt.ylim(x1,x2)
         plt.axis('equal')
-        x = np.zeros(len(u)+1)
-        x[:-1] = np.real(u)
-        x[-1] = np.real(u[0])
-        y = np.zeros(len(u)+1)
-        y[:-1] = np.imag(u)
-        y[-1] = np.imag(u[0])
-        plt.plot(x, y, color='gray')
+        if draw_line:
+            x = np.zeros(len(u)+1)
+            x[:-1] = np.real(u)
+            x[-1] = np.real(u[0])
+            y = np.zeros(len(u)+1)
+            y[:-1] = np.imag(u)
+            y[-1] = np.imag(u[0])
+            plt.plot(x, y, color = line_color)
         plt.plot(np.real(u), np.imag(u), dot_style, label = label)
         plt.grid()
         if draw_zero:
@@ -98,9 +105,27 @@ def imshow_bw(img, title = '', cmap = 'gray', ax = None):
         
 def plot_measure(q):
     ind = np.argmin(q)
-    plt.title('min(Q) = '+str(round(q[ind],3)))
-    plt.xlabel('p (point index)')
-    plt.ylabel('Q (asymmetry measure)')
+    plt.title('Asymmetry measure for contour points')
+    plt.xlabel('p - point index')
+    plt.ylabel('Q - asymmetry measure')
     plt.grid()
     plt.plot(q, label = 'Q(p)')
-    plt.plot([ind],[q[ind]],'ro', label = 'min')
+    plt.plot([ind], [q[ind]], 'ro', 
+             label = 'min(Q) = ' + str(round(q[ind],3)))
+    
+def plot_hull(u, u_h, h, m):
+    plt.title('Hull based search')
+    plt.grid()
+    centroid = u.mean()
+    contour(u, 'plt', label = 'contour points', dot_style = 'go', draw_zero = False)
+    contour(m, 'plt', label = 'nearest to centroid-CH edge center line', 
+            dot_style = 'co', draw_line = False, draw_zero = False)
+    contour(h, 'plt', label = 'convex hull points', dot_style = 'ro', 
+            draw_line=False, draw_zero = False)   
+    contour(h, 'plt', label = 'convex hull', dot_style = 'y-', 
+            line_color = 'yellow', draw_zero = False)     
+    contour(u_h, 'plt', label = 'points to search axis', dot_style = 'b+', 
+            draw_line = False, draw_zero = False)  
+    plt.plot([np.real(centroid)],[np.imag(centroid)],'yo',label='centroid')
+    plt.legend()
+    
