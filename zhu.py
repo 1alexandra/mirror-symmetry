@@ -195,20 +195,7 @@ def many_objects(Q, folder, res_folder, output_image_format = None):
 
 
     
-def rotate_calc(dots_arr, N, ret_theta = False, ret_abs_sum = False, ret_sum_abs = False):
-    theta = find_theta(dots_arr)
-    dots_new = dots_arr * np.exp(-1j*theta)
-    a = np.real(dots_new)
-    b = np.imag(dots_new)
-#     thr =  (np.sum(b*b)/N)**0.5
-    thr = (np.sum(b*b))**0.5 / N
-    if ret_theta:
-        return thr, theta
-    if ret_abs_sum:
-        return np.abs(np.sum(b)/N)
-    if ret_sum_abs:
-        return np.sum(np.abs(b)/N)
-    return thr
+
 
 
 

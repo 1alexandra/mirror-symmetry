@@ -74,7 +74,7 @@ def preprocess(u, mid_iters = 1):
         vec = u[(i+1)%len(u)] - u[i]
         u_m += list(u[i] + steps * vec)
     return np.array(u_m)
-    
+
 def index_neighbors(u, z, delta = 5):
     """
     input:
@@ -90,17 +90,3 @@ def index_neighbors(u, z, delta = 5):
     tmp = max(np.min(np.abs(u_step-u)),1)
     delta_new = delta * tmp ### было /
     return np.arange(len(u))[np.abs(u-z) <= delta_new]
-    
-def new_start_point(f, s, ind=None):
-    """
-    input:
-    f -- complex array, Fourier descriptor (FD),
-    s -- new index of starting point,
-    ind -- None or array of int, indexes where to calculate new FD.
-    output:
-    fd_new if ind is None, else fd_new[ind] -- complex array
-    """
-    N = len(f)
-    if ind is None:
-        ind = np.arange(N)
-    return f[ind]*np.exp(-1j*2*np.pi/N*ind*s)

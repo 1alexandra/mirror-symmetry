@@ -1,7 +1,20 @@
 import numpy as np
 import cv2
 
-from zhu_contour import add_middles, index_neighbors, u_to_cnt
+from zhu_contour import preprocess, index_neighbors, u_to_cnt
+    
+def new_start_point(f, s, ind = None):
+    """
+    input:
+    f -- complex array, Fourier descriptor (FD),
+    s -- new index of starting point,
+    ind -- None or array of int, indexes where to calculate new FD.
+    output:
+    fd_new if ind is None, else fd_new[ind] -- complex array
+    """
+    N = len(f)
+    ind = ind if ind is not None else np.arange(N)
+    return f[ind] * np.exp(-1j * 2*np.pi/N * ind * s)    
     
 def find_theta(dots):
     """
@@ -49,7 +62,7 @@ def dot_to_line(x, z1, z2):
                    + im_z1 * re_z2 - im_z2 * re_z1)
 
 
-def hull_based_index(u, delta = None, middle_iters = 1):
+def hull_based_index(u, delta = None, mid_iters = 1):
     """
     input:
     u -- numpy array of complex contour points,
@@ -62,8 +75,8 @@ def hull_based_index(u, delta = None, middle_iters = 1):
     """
     if delta is None:
         return np.arange(len(u)), np.array([], dtype=int)
-    # *2**m из-за дискретизации середин ребер
-    hull0 = cv2.convexHull(u_to_cnt(u*(2**middle_iters)), returnPoints = False) 
+    scale = 2 ** mid_iters
+    hull0 = cv2.convexHull(u_to_cnt(u * scale), returnPoints = False) 
     centroid = np.mean(u)
     hull0 = np.ravel(hull0)
     hull_u = u[hull0]
