@@ -63,17 +63,25 @@ def preprocess(u, mid_iters = 1):
     preprocessed u, comlex array:
         max(abs(u)) = 1,
         min(re(u)) = min(im(u)) = 0;
-        'mid_iters' times added contour edge centers.
+        'mid_iters' times added contour edge centers,
+    vec -- complex,
+    scale -- double,
+    u = (u-vec)/scale.
     """
-    u -= np.min(np.real(u)) + np.min(np.imag(u)) * 1j
-    u /= np.max(np.abs(u))
+    vec = np.min(np.real(u)) + np.min(np.imag(u)) * 1j
+    scale = np.max(np.abs(u))
+    u -= vec
+    u /= scale
     u_m = []
     parts = 2 ** mid_iters
     steps = (1/parts) * np.arange(parts)
     for i in range(len(u)):
         vec = u[(i+1)%len(u)] - u[i]
         u_m += list(u[i] + steps * vec)
-    return np.array(u_m)
+    return np.array(u_m), vec, scale
+
+def preprocess_inverse(u, vec, scale):
+    return u * scale + vec
 
 def index_neighbors(u, z, delta = 5):
     """

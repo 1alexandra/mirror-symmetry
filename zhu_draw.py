@@ -21,22 +21,58 @@ def prepare_scene(w=20, h=5):
               'ytick.labelsize':'x-large'}
     pylab.rcParams.update(params)
 
-def contour(u, 
-            method = 'plt',
-            margin = 0.1,
+def line_in_rect(p, v, x1, x2, y1, y2):
+    EPS = 1e-15
+    v /= abs(v)
+    if abs(np.real(v)) < EPS:
+        return p.re + x1 * 1j, p.re + x2 * 1j 
+    if abs(np.imag(v)) < EPS:
+        return x1 + np.imag(p) * 1j, x2 + np.imag(p) * 1j
+    points = []
+    for x in [x1, x2]:    
+        s = p + (x - np.real(p)) / np.real(v) * v
+        if y1 - EPS <= np.imag(s) <= y2 + EPS:
+            points.append(s)
+    for y in [y1, y2]:
+        s = p + (y - np.imag(p)) / np.imag(v) * v
+        if x1 - EPS <= np.real(s) <= x2 + EPS:
+            points.append(s)
+    while len(points) != 2:
+        for i in range(len(points)):
+            for j in range(i+1, len(points)):
+                if abs(points[i]-points[j]) < 2 * EPS:
+                    points = points[:j]+points[j+1:]
+                    break
+                else:
+                    print(abs(points[i]-points[j]))
+            else:
+                continue
+            break
+        else:
+            print('line_in_rect error:', p, v, x1, x2, y1, y2)
+            break
+    return points
+        
+
+def contour(
+            method,
+            u, 
+            axis_point = None,
+            axis_vec = None,
             label = 'U',
-            dot_style = 'go',
-            draw_line = True,
-            line_color = 'gray',
-            draw_zero = True, 
+            point_marker = 'go',
+            edge_color = 'gray', 
+            axis_marker = 'r-',
+            scale = 800,
             line_w = 1,
             cmap = 'gray'
            ):
     """
     input:
-    u -- complex array, contour points,
     method -- plt or cv2,
-    margin -- 0..1, white space from the borders,
+    u -- complex array, contour points,
+    axis_point -- complex, a point on axis,
+    axis_vec -- complex, an axis direction,
     only for plt mothod:
     label -- plt label,
     dot_style -- contour points plt marker style,
@@ -52,36 +88,48 @@ def contour(u,
     """
     left, right = np.min(np.real(u)), np.max(np.real(u))
     down, up = np.min(np.imag(u)), np.max(np.imag(u))
-    margin = (int)(max(right-left,up-down) * margin) + 1
-    x1 = min(left, down) - margin
-    x2 = max(up, right) + margin
+    margin = max(right-left,up-down) * 0.1
+    x1 = left - margin
+    x2 = right + margin
+    y1 = down - margin
+    y2 = up + margin
     if method == 'plt':
         plt.xlabel('Re')
         plt.ylabel('Im')
         plt.xlim(x1,x2)
-        plt.ylim(x1,x2)
+        plt.ylim(y1,y2)
         plt.axis('equal')
-        if draw_line:
+        if edge_color:
             x = np.zeros(len(u)+1)
             x[:-1] = np.real(u)
             x[-1] = np.real(u[0])
             y = np.zeros(len(u)+1)
             y[:-1] = np.imag(u)
             y[-1] = np.imag(u[0])
-            plt.plot(x, y, color = line_color)
-        plt.plot(np.real(u), np.imag(u), dot_style, label = label)
-        plt.grid()
-        if draw_zero:
-            plt.plot([0], [0], label = 'Zero(0,0)')
-        if label!='' or draw_zero:
+            plt.plot(x, y, color = edge_color)
+        if point_marker:
+            plt.plot(np.real(u), np.imag(u), point_marker, label = label)
+        if axis_marker and axis_point and axis_vec:
+            s1, s2 = line_in_rect(axis_point, axis_vec, x1, x2, y1, y2)
+            plt.plot([np.real(s1),np.real(s2)],[np.imag(s1),np.imag(s2)], 
+                     axis_marker, label = 'Symmetry axis')
+        if label:
             plt.legend()
+        plt.grid()
     elif method == 'cv2':
-        w = (int)(right-left+2*margin+1)
-        h = (int)(up-down+2*margin+1)
-        tmp_img = np.zeros((h,w))
-        cnt = u_to_cnt(u - left - 1j * down + margin*(1+1j))
-        cv2.drawContours(tmp_img, [cnt], 0, 255, line_w)
-        return tmp_img
+        w = scale * (x2 - x1)
+        h = scale * (y2 - y1)
+        w, h = int(w), int(h)
+        img = np.zeros((h,w))
+        vec = - left - 1j * down + margin*(1+1j)
+        cnt = u_to_cnt(1j * h + np.conjugate((u + vec) * scale))
+        cv2.drawContours(img, [cnt], 0, 255, line_w)
+        s1, s2 = line_in_rect(1j * h + np.conjugate((axis_point + vec) * scale), 
+                              np.conjugate(axis_vec), 0, w, 0, h)
+        x1, y1 = int(np.real(s1)), int(np.imag(s1))
+        x2, y2 = int(np.real(s2)), int(np.imag(s2))
+        cv2.line(img, (x1, y1), (x2, y2), 255, line_w)
+        return img
 
 def imshow_bw(img, title = '', cmap = 'gray', ax = None):
     """
@@ -141,8 +189,16 @@ def plot_f_abs(f, eps, garms, ind):
     plt.plot([left, right],[np.log(eps), np.log(eps)], 'c--')
     plt.plot([garms//2, garms//2],[down, up], 'c-.')
     plt.plot([len(f)-garms//2, len(f)-garms//2],[down, up], 'c-.')
-    plt.plot(ind, np.log(f[ind]), 'go')
+    plt.plot(ind, np.log(np.abs(f[ind])), 'go')
     plt.grid()
     plt.legend()
     
+def savefig(name, fmt = 'eps'):
+    plt.savefig(name + '.' + fmt, format = fmt, bbox_inches = 'tight')
     
+def bw_to_rgb(img):
+    w, h = img.shape
+    rgb = np.zeros((w, h, 3), dtype = int)
+    for i in range(3):
+        rgb[:,:,i] = img.copy()
+    return rgb

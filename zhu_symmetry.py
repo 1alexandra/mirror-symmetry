@@ -2,51 +2,8 @@ import numpy as np
 import cv2
 from scipy.spatial import ConvexHull
 
-from zhu_contour import preprocess, index_neighbors, u_to_cnt, cnt_to_u
-    
-def new_start_point(f, s, ind = None):
-    """
-    input:
-    f -- complex array, Fourier descriptor (FD),
-    s -- new index of starting point,
-    ind -- None or array of int, indexes where to calculate new FD.
-    output:
-    fd_new if ind is None, else fd_new[ind] -- complex array
-    """
-    N = len(f)
-    ind = ind if ind is not None else np.arange(N)
-    return f[ind] * np.exp(-1j * 2*np.pi/N * ind * s)    
-    
-def find_theta(dots):
-    """
-    input:
-    dots -- array of complex points;
-    output:
-    optimal angle of line passing through all dots in radians.
-    """
-    a = np.real(dots)
-    b = np.imag(dots)
-    k1 = np.sum(b * b)
-    k2 = np.sum(a * a)
-    k3 = 2 * np.sum(a * b)
-    f = lambda t: k1*np.cos(t)**2 + k2*np.sin(t)**2 + 2*k3*np.sin(t)*np.cos(t)
-    if k1 == k2:
-        if k3 == 0:
-            print('find_theta error')
-            return 0
-        t1 = np.pi/4
-    elif k3 == 0:
-        t1 = 0
-    else:
-        t1 = 0.5 * np.arctan(k3/(k1-k2))
-    t2 = t1 + 0.5 * np.pi
-    if f(t1) < f(t2):
-        if f(0) > f(t1):
-            return - t1 % np.pi
-    else:
-        if f(0) > f(t2):
-            return - t2 % np.pi
-    return 0
+from zhu_contour import preprocess, preprocess_inverse, index_neighbors 
+from zhu_contour import u_to_cnt, cnt_to_u 
 
 def nearest_to_line(u, z1, z2):
     """
@@ -119,78 +76,88 @@ def f_abs_based_index(f, alpha = 0, beta = 1, ret_zero = False):
     crit_2 = np.logical_or(ind <= garms/2, ind >= N-garms/2)
     return ind[crit_1 * crit_2], eps, garms
     
-def measure_axis(theta, dots, N): ### здесь не было theta!
+def find_theta(dots):
     """
     input:
-    theta -- angle of measuring axis to x-axis, radians,
+    dots -- array of complex points;
+    output:
+    optimal angle of line passing through all dots in radians.
+    """
+    a = np.real(dots)
+    b = np.imag(dots)
+    k1 = np.sum(b * b)
+    k2 = np.sum(a * a)
+    k3 = 2 * np.sum(a * b)
+    f = lambda t: k1*np.cos(t)**2 + k2*np.sin(t)**2 + 2*k3*np.sin(t)*np.cos(t)
+    if k1 == k2:
+        if k3 == 0:
+            print('find_theta error')
+            return 0
+        t1 = np.pi/4
+    elif k3 == 0:
+        t1 = 0
+    else:
+        t1 = 0.5 * np.arctan(k3/(k1-k2))
+    t2 = t1 + 0.5 * np.pi
+    if f(t1) < f(t2):
+        if f(0) > f(t1):
+            return - t1 % np.pi
+    else:
+        if f(0) > f(t2):
+            return - t2 % np.pi
+    return 0
+    
+def measure_axis(dots, N): 
+    """
+    input:
     dots -- array of complex, Fourier Descriptor (FD) 
         subsequence of coefficients, 
     N -- contour points number (in order to normalize),
     output:
-    double, measure
+    double measure,
+    double angle theta in radians
     """
+    theta = find_theta(dots)
     b = np.imag(dots * np.exp(-1j*theta))
     # было (np.sum(b*b)/N)**0.5
     ### TODO может быть нормировать на количество точек?
     ### TODO может быть нормировать на max(abs(dot))?
     ### TODO может быть смотреть не на квадрат мнимой части, а на модуль?
-    return np.sum(b*b)**0.5 / N
-    
-def find_sym(u, plot_q = False, delta = None, q_thresh = 100,
-                     name=None, gauss=False, alpha=0, beta=1):
-    u = preprocess(u)
+    return np.sum(b*b)**0.5 / N, theta
+
+def new_start_point(f, s, ind = None):
+    """
+    input:
+    f -- complex array, Fourier descriptor (FD),
+    s -- new index of starting point,
+    ind -- None or array of int, indexes where to calculate new FD.
+    output:
+    fd_new if ind is None, else fd_new[ind] -- complex array
+    """
+    N = len(f)
+    ind = ind if ind is not None else np.arange(N)
+    return f[ind] * np.exp(-1j * 2*np.pi/N * ind * s)   
+ 
+def find_sym(u, 
+             delta_hull = None, 
+             alpha = 0, 
+             beta = 1, 
+             delta_neib = None, 
+             q_th = np.inf
+            ):
+    u, vec, scale = preprocess(u)
     f = np.fft.fft(u)
     N = len(u)
-    tmp_img = draw_ifft(f,False,line)
-    by_hull, hull = hull_based_index(u, delta)
-    f_ind = filter_f(f,alpha,beta)
-    thrs = [rotate_calc(new_start_point(f,s,f_ind),N) for s in by_hull]
-    first_true_index = by_hull[np.argmin(thrs)]
-    x, y = np.real(u[first_true_index]), np.imag(u[first_true_index])
-    ind = u_delta(u,x,y,delta)
-    thrs = [rotate_calc(new_start_point(f, s), N) for s in ind]
-    true_index = ind[np.argmin(thrs)]
-    thr, theta = rotate_calc(new_start_point(f,true_index),N,True)
-    x = -1
-    y = -1
-    if thr<thresh:
-        x, y = np.real(u[-true_index]), np.imag(u[-true_index])
-        v_x, v_y = np.cos(theta), np.sin(theta)
-        c = (int)(800/tmp_img.shape[0])
-        tmp_img = draw_ifft(f*c,False,line)   
-        w, h = tmp_img.shape
-        if draw_points:
-            tmp = np.zeros((w,h,3),dtype=int)*255
-            for inddd in range(3):
-                tmp[:,:,inddd] = tmp_img.copy()
-            tmp_img = tmp
-        k = max(tmp_img.shape)
-        cv2.line(tmp_img,(c*int(x),c*int(y)),(c*int(x-k*v_x),c*int(y-k*v_y)),(255,255,255),line)
-        cv2.line(tmp_img,(c*int(x),c*int(y)),(c*int(x+k*v_x),c*int(y+k*v_y)),(255,255,255),line)
-        if draw_points:
-            for el in by_hull:
-                x, y = np.real(u[-el]), np.imag(u[-el])
-                cv2.circle(tmp_img,(c*int(x),c*int(y)),line,(0,255,255),line)
-            for el in hull:
-                x, y = np.real(u[-el]), np.imag(u[-el])
-                cv2.circle(tmp_img,(c*int(x),c*int(y)),line*2,(255,255,0),line)
-        if not name is None:
-            plt.savefig(name[:-4]+'_q.png',format='png',bbox_inches='tight')
-        plt.show()
-#         plt.xlabel('coefficients')
-#         plt.ylabel('importance')
-#         plt.title('Fourier descriptor importance')
-#         plt.plot(np.log(np.abs(f))[1:], label='log|f|')
-#         plt.legend()
-#         plt.show()
-    if show:
-        if i>0:
-            draw_complex(new_start_point(f,true_index),True,False,'F, l>0',False)
-            plt.savefig('plane_f'+str(i)+'.png',format='png')
-            plt.show()
-            if gauss:
-                tmp_img = cv2.GaussianBlur(tmp_img, (3,3), 0)
-            plt.imsave('plane_line'+str(i)+'.png',255-tmp_img,cmap='gray',format = 'png')
-        plt.imshow(255-tmp_img,cmap='gray')
-        plt.show()
-    return tmp_img, x-np.real(vec), y-np.imag(vec), theta, thr, -true_index
+    by_hull, *_ = hull_based_index(u, delta_hull)
+    f_ind, *_ = f_abs_based_index(f, alpha, beta)
+    qs1 = [measure_axis(new_start_point(f, s, f_ind), N)[0] for s in by_hull]
+    approx_ind = by_hull[np.argmin(qs1)]
+    neibs = index_neighbors(u, u[approx_ind], delta_neib)
+    qs2 = [measure_axis(new_start_point(f, s), N)[0] for s in neibs]
+    sym_ind = neibs[np.argmin(qs2)]
+    q, theta = measure_axis(new_start_point(f, sym_ind), N)
+    if q > q_th:
+        return None, None, q
+    #sym_point = preprocess_inverse(u[sym_ind])   ### было -true_index
+    #sym_vec = np.exp(1j*theta)
+    return sym_ind, theta, q 
