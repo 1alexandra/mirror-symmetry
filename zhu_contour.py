@@ -37,7 +37,7 @@ def binarize(image):
                                     5, 0)
     return img
     
-def get_contours(image, get_all = False):
+def get_contours(path, get_all = False):
     """
     input:
     image -- cv2 read bw image,
@@ -45,7 +45,7 @@ def get_contours(image, get_all = False):
     output:
     list of comlex arrays
     """
-    img = binarize(image)
+    img = binarize(cv2.imread(path,0))
     contours, _ = cv2.findContours(img,
                                    cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_NONE)
@@ -54,10 +54,10 @@ def get_contours(image, get_all = False):
         contours = [contours[np.argmax(measure)]]
     return [cnt_to_u(cnt) for cnt in contours]
 
-def preprocess(u, mid_iters = 1):
+def preprocess(u_, mid_iters = 1):
     """
     input: 
-    u -- complex array, contour points,
+    u_ -- complex array, contour points,
     mid_iters -- int,
     output:
     preprocessed u, comlex array:
@@ -68,6 +68,7 @@ def preprocess(u, mid_iters = 1):
     scale -- double,
     u = (u-vec)/scale.
     """
+    u = u_.copy()
     vec = np.min(np.real(u)) + np.min(np.imag(u)) * 1j
     scale = np.max(np.abs(u))
     u -= vec
@@ -76,8 +77,8 @@ def preprocess(u, mid_iters = 1):
     parts = 2 ** mid_iters
     steps = (1/parts) * np.arange(parts)
     for i in range(len(u)):
-        vec = u[(i+1)%len(u)] - u[i]
-        u_m += list(u[i] + steps * vec)
+        cur = u[(i+1)%len(u)] - u[i]
+        u_m += list(u[i] + steps * cur)
     return np.array(u_m), vec, scale
 
 def preprocess_inverse(u, vec, scale):

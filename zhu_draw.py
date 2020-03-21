@@ -54,7 +54,7 @@ def line_in_rect(p, v, x1, x2, y1, y2):
     return points
         
 
-def contour(
+def draw_contour(
             method,
             u, 
             axis_point = None,
@@ -165,16 +165,16 @@ def plot_measure(q):
 def plot_hull(u, u_h, h, m):
     plt.title('Hull based search')
     plt.grid()
-    contour('plt', u, label = 'contour points', 
-            point_marker = 'go')
-    contour('plt', m, label = 'centroid-CH edge', 
-            point_marker = 'co', edge_color = None)
-    contour('plt', h, label = 'convex hull points', 
-            point_marker = 'ro', edge_color = None)   
-    contour('plt', h, label = 'convex hull', point_marker = 'y-', 
-            edge_color = 'yellow')     
-    contour('plt', u_h, label = 'points to search axis', 
-            point_marker = 'b+', edge_color = None)  
+    draw_contour('plt', u, label = 'contour points', 
+                 point_marker = 'go')
+    draw_contour('plt', m, label = 'centroid-CH edge', 
+                 point_marker = 'co', edge_color = None)
+    draw_contour('plt', h, label = 'convex hull points', 
+                 point_marker = 'ro', edge_color = None)   
+    draw_contour('plt', h, label = 'convex hull', point_marker = 'y-', 
+                 edge_color = 'yellow')     
+    draw_contour('plt', u_h, label = 'points to search axis', 
+                 point_marker = 'b+', edge_color = None)  
     centroid = u.mean()
     plt.plot([np.real(centroid)],[np.imag(centroid)], 'yo', label='centroid')
     plt.grid()
