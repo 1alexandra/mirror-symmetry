@@ -135,10 +135,9 @@ def new_start_point(f, s, ind = None):
     fd_new if ind is None, else fd_new[ind] -- complex array
     """
     N = len(f)
-    ind = ind if ind is not None else np.arange(N)
-    return f[ind] * np.exp(-1j * 2*np.pi/N * ind * s)   
+    ind = ind if (ind is not None) else np.arange(N)
+    return f[ind] * np.exp(-1j * 2*np.pi/N * ind * (N-s)) ### было s   
 
-from zhu_draw import draw_contour
 def find_sym(u_, 
              delta_hull = None, 
              alpha = 0, 
@@ -149,29 +148,19 @@ def find_sym(u_,
     u, vec, scale = preprocess(u_)
     f = np.fft.fft(u)
     N = len(u)
-    by_hull, hull, middles = hull_based_index(u, delta_hull)
-    draw_contour('plt', preprocess_inverse(u[by_hull], vec, scale))
-    plt.show()
+    by_hull, *_ = hull_based_index(u, delta_hull)
     f_ind, *_ = f_abs_based_index(f, alpha, beta)
-    print(N)
-    print(f_ind)
-    qs1 = [measure_axis(new_start_point(f, s, f_ind), N)[0] for s in by_hull]
-    plt.plot(by_hull, qs1)
-    plt.show()
+    qs1 = [measure_axis(new_start_point(f, s, f_ind), N)[0] 
+           for s in by_hull]
     approx_ind = by_hull[np.argmin(qs1)]
-    print(approx_ind, preprocess_inverse(u[approx_ind], vec, scale))
     neibs = index_neighbors(u, u[approx_ind], delta_neib)
-    draw_contour('plt', u[neibs])
-    plt.show()
-    qs2 = [measure_axis(new_start_point(f, s), N)[0] for s in neibs]
-    plt.plot(neibs, qs2)
-    plt.show()
+    all_f_ind = np.arange(1,N)
+    qs2 = [measure_axis(new_start_point(f, s, all_f_ind), N)[0] 
+           for s in neibs]
     sym_ind = neibs[np.argmin(qs2)]
-    print(sym_ind, preprocess_inverse(u[sym_ind], vec, scale))
-    q, theta = measure_axis(new_start_point(f, sym_ind), N)
-    print(q, theta)
+    q, theta = measure_axis(new_start_point(f, sym_ind, all_f_ind), N)
     sym_point, sym_vec = None, None
     if q <= q_th:
-        sym_point = preprocess_inverse(u[sym_ind], vec, scale)   ### было -true_index
+        sym_point = preprocess_inverse(u[sym_ind], vec, scale)
         sym_vec = np.exp(1j*theta)
     return q, (sym_point, sym_vec) 

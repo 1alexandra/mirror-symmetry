@@ -117,6 +117,8 @@ def draw_contour(
             plt.legend()
         plt.grid()
     elif method == 'cv2':
+        if right > 10 or up > 10 or down < -10 or left < -10:
+            scale = 1
         w = scale * (x2 - x1)
         h = scale * (y2 - y1)
         w, h = int(w), int(h)
@@ -124,11 +126,12 @@ def draw_contour(
         vec = - left - 1j * down + margin*(1+1j)
         cnt = u_to_cnt(1j * h + np.conjugate((u + vec) * scale))
         cv2.drawContours(img, [cnt], 0, 255, line_w)
-        s1, s2 = line_in_rect(1j * h + np.conjugate((axis_point + vec) * scale), 
-                              np.conjugate(axis_vec), 0, w, 0, h)
-        x1, y1 = int(np.real(s1)), int(np.imag(s1))
-        x2, y2 = int(np.real(s2)), int(np.imag(s2))
-        cv2.line(img, (x1, y1), (x2, y2), 255, line_w)
+        if axis_point and axis_vec:
+            s1, s2 = line_in_rect(1j * h + np.conjugate((axis_point + vec) * scale), 
+                                  np.conjugate(axis_vec), 0, w, 0, h)
+            x1, y1 = int(np.real(s1)), int(np.imag(s1))
+            x2, y2 = int(np.real(s2)), int(np.imag(s2))
+            cv2.line(img, (x1, y1), (x2, y2), 255, line_w)
         return img
 
 def imshow_bw(img, title = '', cmap = 'gray', ax = None):
@@ -162,7 +165,7 @@ def plot_measure(q):
     plt.grid()
     plt.legend()
     
-def plot_hull(u, u_h, h, m):
+def draw_hull(u, u_h, h, m):
     plt.title('Hull based search')
     plt.grid()
     draw_contour('plt', u, label = 'contour points', 
