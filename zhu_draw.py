@@ -5,7 +5,7 @@ import matplotlib.pylab as pylab
 
 from zhu_contour import u_to_cnt
 
-def prepare_scene(w=20, h=5):
+def prepare_scene(w=9, h=6):
     """
     input:
     w, h -- plt figsize
@@ -75,11 +75,11 @@ def contour(
     axis_vec -- complex, an axis direction,
     only for plt mothod:
     label -- plt label,
-    dot_style -- contour points plt marker style,
-    draw_line -- bool, if True, gray edges draw,
-    line_color -- plt color, if draw_line is True,
-    draw_zero -- bool, if True, (0+0j) point draw,
+    point_marker -- contour points plt marker style,
+    edge_color -- contour edges plt color,
+    axis_marker -- axis line plt marker style,
     only for cv2 method:
+    scale -- double: draw int(u*scale) contour
     line_w -- contour line width,
     cmap -- plt cmap to imshow.
     output:
@@ -164,17 +164,19 @@ def plot_measure(q):
     
 def plot_hull(u, u_h, h, m):
     plt.title('Hull based search')
-    contour(u, 'plt', label = 'contour points', dot_style = 'go', draw_zero = False)
-    contour(m, 'plt', label = 'nearest to centroid-CH edge center line', 
-            dot_style = 'co', draw_line = False, draw_zero = False)
-    contour(h, 'plt', label = 'convex hull points', dot_style = 'ro', 
-            draw_line=False, draw_zero = False)   
-    contour(h, 'plt', label = 'convex hull', dot_style = 'y-', 
-            line_color = 'yellow', draw_zero = False)     
-    contour(u_h, 'plt', label = 'points to search axis', dot_style = 'b+', 
-            draw_line = False, draw_zero = False)  
+    plt.grid()
+    contour('plt', u, label = 'contour points', 
+            point_marker = 'go')
+    contour('plt', m, label = 'centroid-CH edge', 
+            point_marker = 'co', edge_color = None)
+    contour('plt', h, label = 'convex hull points', 
+            point_marker = 'ro', edge_color = None)   
+    contour('plt', h, label = 'convex hull', point_marker = 'y-', 
+            edge_color = 'yellow')     
+    contour('plt', u_h, label = 'points to search axis', 
+            point_marker = 'b+', edge_color = None)  
     centroid = u.mean()
-    plt.plot([np.real(centroid)],[np.imag(centroid)],'yo',label='centroid')
+    plt.plot([np.real(centroid)],[np.imag(centroid)], 'yo', label='centroid')
     plt.grid()
     plt.legend()
     
