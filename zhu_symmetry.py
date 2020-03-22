@@ -1,9 +1,10 @@
+import os
 import numpy as np
 import cv2
 from scipy.spatial import ConvexHull
 
 from zhu_contour import preprocess, preprocess_inverse, index_neighbors 
-from zhu_contour import u_to_cnt, cnt_to_u 
+from zhu_contour import u_to_cnt, cnt_to_u, get_contours
 
 def nearest_to_line(u, z1, z2):
     """
@@ -164,3 +165,17 @@ def find_sym(u_,
         sym_point = preprocess_inverse(u[sym_ind], vec, scale)
         sym_vec = np.exp(1j*theta)
     return q, (sym_point, sym_vec) 
+    
+def get_drawing_args(folder):
+    drawing_args = []
+    for name in os.listdir(path='./'+folder):
+        try:
+            u_list = get_contours(folder+'/'+name)
+        except BaseException:
+            print(folder+'/'+name, 'error')
+            continue
+        for u in u_list:
+            q, (p, v) = find_sym(u)
+            drawing_args.append([u, p, v, q])
+    drawing_args.sort(key=lambda x: x[-1])
+    return drawing_args

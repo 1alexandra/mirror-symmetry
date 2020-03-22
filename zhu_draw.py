@@ -64,7 +64,6 @@ def draw_contour(
             edge_color = 'gray', 
             axis_marker = 'r-',
             scale = 800,
-            line_w = 1,
             cmap = 'gray'
            ):
     """
@@ -122,6 +121,7 @@ def draw_contour(
         w = scale * (x2 - x1)
         h = scale * (y2 - y1)
         w, h = int(w), int(h)
+        line_w = max(1, min(w,h)//100)
         img = np.zeros((h,w))
         vec = - left - 1j * down + margin*(1+1j)
         cnt = u_to_cnt(1j * h + np.conjugate((u + vec) * scale))
@@ -151,7 +151,7 @@ def imshow_bw(img, title = '', cmap = 'gray', ax = None):
         plt.yticks([])
         plt.imshow(255-img, cmap=cmap)
     else:
-        ax.set_title(title,fontsize= 30)
+        ax.set_title(title, fontsize= 30)
         ax.imshow(255-img, cmap=cmap)     
         
 def plot_measure(q):
@@ -207,3 +207,29 @@ def bw_to_rgb(img):
     for i in range(3):
         rgb[:,:,i] = img.copy()
     return rgb
+
+def subploter(drawing_args, cols=5, figscale=5):
+    """
+    input:
+    drawing_args -- list of [u, p, v, q], where 
+        u -- complex array, contour points,
+        p -- complex point on symmetry axis,
+        v -- complex vector of symmetry axis direction,
+        q -- double, measure of symmetry;
+    cols -- int, number of columns in subplot,
+    figscale -- double, scale factor to figsize;
+    output:
+    None.
+    It draws by plt subplots with cv2 images 
+    with contours and symmetry axises, titled by "Q=...".
+    """
+    rows = (len(drawing_args) + cols - 1) // cols
+    fig, axs = plt.subplots(rows, cols, 
+                            figsize=(figscale*cols, figscale*rows))
+    plt.setp(axs, xticks=[], yticks=[])
+    for i, (u, p, v, q) in enumerate(drawing_args):
+        row = i // cols
+        col = i % cols
+        imshow_bw(draw_contour('cv2', u, p, v),
+                  title=f'Q = {round(q,3)}',
+                  ax=axs[row][col])

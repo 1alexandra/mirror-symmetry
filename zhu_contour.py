@@ -30,6 +30,7 @@ def binarize(image):
     if blurred[0,0] == 255:
         img = 255 - img
     img *= (int)(255 / np.max(img))
+    img = img[::-1] ### new
     if len(np.unique(blurred)) != 2:
         img = cv2.adaptiveThreshold(img, 255, 
                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
