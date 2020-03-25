@@ -38,7 +38,7 @@ def binarize(image):
                                     5, 0)
     return img
     
-def get_contours(path, get_all = False):
+def get_contours(path, get_all = False, min_area = 50):
     """
     input:
     image -- cv2 read bw image,
@@ -50,37 +50,79 @@ def get_contours(path, get_all = False):
     contours, _ = cv2.findContours(img,
                                    cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_NONE)
-    if not get_all:
-        measure = [cv2.contourArea(cnt) for cnt in contours]
-        contours = [contours[np.argmax(measure)]]
-    return [cnt_to_u(cnt) for cnt in contours]
+    measure = np.array([cv2.contourArea(cnt) for cnt in contours])
+    print(measure)
+    if get_all:
+        index = np.arange(len(measure))[measure >= min_area]
+    else:
+        index = [np.argmax(measure)]
+    return [cnt_to_u(contours[i]) for i in index]
 
-def preprocess(u_, mid_iters = 1):
+def fix_period(u, n_mult=2):
+    """
+    input:
+    u -- complex array, contour points,
+    n -- number of output contour points, if None, n = len(u)
+    output:
+    w -- complex array, contour points with equal paths along the contour
+        between each adjacent pair
+    """
+    n = len(u) * n_mult
+    u_next = np.zeros(u.shape, dtype=complex)
+    u_next[:-1] = u[1:]
+    u_next[-1] = u[0]
+    step = np.sum(np.abs(u-u_next)) / n
+    seg_ind = 0
+    seg_start = u[0]
+    cur_step = step
+    w = []
+    for i in range(n):
+        w.append(seg_start)
+        while True:
+            seg_end = u[(seg_ind+1) % len(u)]
+            seg_vec = seg_end - seg_start
+            seg_len = abs(seg_vec)
+            if seg_len < cur_step:
+                seg_ind += 1
+                seg_start = seg_end
+                cur_step -= seg_len
+            else:
+                seg_start += seg_vec / seg_len * cur_step
+                cur_step = step
+                break
+    return np.array(w)
+
+def add_middles(u, mid_iters=1):
     """
     input: 
     u_ -- complex array, contour points,
     mid_iters -- int,
     output:
-    preprocessed u, comlex array:
-        max(abs(u)) = 1,
-        min(re(u)) = min(im(u)) = 0;
-        'mid_iters' times added contour edge centers,
-    vec -- complex,
-    scale -- double,
-    u = (u-vec)/scale.
+    preprocessed u, comlex array 'mid_iters' times added contour edge centers
     """
-    u = u_.copy()
-    vec = np.min(np.real(u)) + np.min(np.imag(u)) * 1j
-    scale = np.max(np.abs(u))
-    u -= vec
-    u /= scale
     u_m = []
     parts = 2 ** mid_iters
     steps = (1/parts) * np.arange(parts)
     for i in range(len(u)):
         cur = u[(i+1)%len(u)] - u[i]
         u_m += list(u[i] + steps * cur)
-    return np.array(u_m), vec, scale
+    return np.array(u_m)    
+        
+def preprocess(u):
+    """
+    input: 
+    u_ -- complex array, contour points,
+    output:
+    preprocessed u, comlex array:
+        max(abs(u)) = 1,
+        min(re(u)) = min(im(u)) = 0;
+    vec -- complex,
+    scale -- double,
+    u = (u-vec)/scale.
+    """
+    vec = np.min(np.real(u)) + np.min(np.imag(u)) * 1j
+    scale = np.max(np.abs(u-vec))
+    return (u-vec) / scale, vec, scale
 
 def preprocess_inverse(u, vec, scale):
     return u * scale + vec
@@ -98,5 +140,5 @@ def index_neighbors(u, z, delta = 5):
         return np.arange(len(u))
     u_step = np.array(list(u[1:])+[u[0]])
     tmp = max(np.min(np.abs(u_step-u)),1)
-    delta_new = delta * tmp ### было /
+    delta_new = delta * tmp
     return np.arange(len(u))[np.abs(u-z) <= delta_new]
