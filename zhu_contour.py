@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+import os
+
 
 def u_to_cnt(u):
     """
@@ -27,17 +29,13 @@ def binarize(image):
     """
     blurred = cv2.GaussianBlur(image, (5,5), 0)
     img = np.array(blurred, dtype=np.uint8)
-    if blurred[0,0] == 255:
-        img = 255 - img
     img *= (int)(255 / np.max(img))
-    img = img[::-1] ### new
-    if len(np.unique(blurred)) != 2:
-        img = cv2.adaptiveThreshold(img, 255, 
-                                    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                    cv2.THRESH_BINARY, 
-                                    5, 0)
+    img = img[::-1]
+    _, img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
+    if img[0,0] == 255:
+        img = 255 - img
     return img
-    
+
 def get_contours(path, get_all = False, min_area = 50):
     """
     input:
@@ -46,17 +44,27 @@ def get_contours(path, get_all = False, min_area = 50):
     output:
     list of comlex arrays
     """
-    img = binarize(cv2.imread(path,0))
+    img = cv2.imread(path, 0)
+    if img is None:
+        return []
+    image = binarize(img)
+    w, h = image.shape
+    margin = 1
+    img = np.zeros((w+2*margin,h+2*margin), dtype=np.uint8)
+    img[margin:-margin,margin:-margin] = image
     contours, _ = cv2.findContours(img,
                                    cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_NONE)
     measure = np.array([cv2.contourArea(cnt) for cnt in contours])
-    print(measure)
     if get_all:
         index = np.arange(len(measure))[measure >= min_area]
     else:
         index = [np.argmax(measure)]
-    return [cnt_to_u(contours[i]) for i in index]
+    return [cnt_to_u(contours[i])-margin*(1+1j) for i in index]
+
+def from_folder(folder, get_all=True):
+    return {name: get_contours(folder+'/'+name, get_all)
+            for name in os.listdir(path='./'+folder)}
 
 def fix_period(u, n_mult=2):
     """
@@ -127,7 +135,7 @@ def preprocess(u):
 def preprocess_inverse(u, vec, scale):
     return u * scale + vec
 
-def index_neighbors(u, z, delta = 5):
+def index_neighbors(u, z, delta=5):
     """
     input:
     u -- complex array, contour points,
@@ -138,7 +146,7 @@ def index_neighbors(u, z, delta = 5):
     """
     if delta is None:
         return np.arange(len(u))
-    u_step = np.array(list(u[1:])+[u[0]])
-    tmp = max(np.min(np.abs(u_step-u)),1)
+    u_step = np.array(list(u[1:]) + [u[0]])
+    tmp = max(np.min(np.abs(u_step - u)), 1)
     delta_new = delta * tmp
     return np.arange(len(u))[np.abs(u-z) <= delta_new]

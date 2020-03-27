@@ -1,7 +1,7 @@
-import os
 import numpy as np
 import cv2
 from scipy.spatial import ConvexHull
+from time import time
 
 from zhu_contour import *
 
@@ -20,6 +20,15 @@ def nearest_to_line(u, z1, z2):
                    - (re_z2 - re_z1) * np.imag(u)
                    + im_z1 * re_z2 - im_z2 * re_z1)
     return np.argmin(dists)
+
+def axis_points(u, p, vec):
+    margin = len(u) // 4
+    ind1 = nearest_to_line(u, p, p+vec)
+    mask = np.ones(len(u), dtype=bool)
+    mask[np.arange(ind1 - margin, ind1 + margin + 1) % len(u)] = False
+    u_part = u[mask]
+    ind_part2 = nearest_to_line(u_part, p, p+vec)
+    return u[ind1], u_part[ind_part2]
 
 def hull_based_index(u, delta = None):
     """
@@ -165,14 +174,19 @@ def find_sym(u_,
 
 def get_drawing_args(folder):
     drawing_args = []
-    for name in os.listdir(path='./'+folder):
-        try:
-            u_list = get_contours(folder+'/'+name, True)
-        except BaseException:
-            print(folder+'/'+name, 'error')
-            continue
+    for name, u_list in from_folder(folder).items():
         for u in u_list:
             q, (p, v) = find_sym(u)
             drawing_args.append([u, p, v, q])
     drawing_args.sort(key=lambda x: x[-1])
     return drawing_args
+
+def write_axis_points(folder, filename='result.txt', get_all=False):
+    time_start = time()
+    with open(folder+'/'+filename, 'w') as file:
+        for name, u_list in from_folder(folder, get_all).items():
+            for u in u_list:
+                q, (p, v) = find_sym(u)
+                p1, p2 = axis_points(u, p, v)
+                file.write(' '.join([name, str(p1), str(p2), str(q)]) + '\n')
+        file.write('Total time: '+str(round(time()-time_start, 3)))
