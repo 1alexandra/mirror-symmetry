@@ -254,5 +254,5 @@ def subploter(drawing_args, cols=5, figscale=5):
         row = i // cols
         col = i % cols
         imshow_bw(draw_contour('cv2', u, p, v),
-                  title=f'Q = {round(q,3)}',
+                  title=f'N={len(u)}, Q={round(q, 2)}',
                   ax=axs[row][col])

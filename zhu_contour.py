@@ -21,15 +21,18 @@ def cnt_to_u(contour):
     return cnt[:, 0] + 1j * cnt[:, 1]
 
 
-def binarize(image):
+def binarize(image, gauss=0):
     """
     input:
     image -- cv2 read bw image,
     output:
     image -- cv2 binarized image, with only 0 and 255 values.
     """
-    blurred = cv2.GaussianBlur(image, (5, 5), 0)
-    img = np.array(blurred, dtype=np.uint8)
+    if gauss:
+        blurred = cv2.GaussianBlur(image, (gauss, gauss), 0)
+        img = np.array(blurred, dtype=np.uint8)
+    else:
+        img = np.array(image, dtype=np.uint8)
     img *= (int)(255 / np.max(img))
     img = img[::-1]
     _, img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
@@ -65,9 +68,28 @@ def get_contours(path, get_all=False, min_area=50):
     return [cnt_to_u(contours[i]) - margin*(1+1j) for i in index]
 
 
-def from_folder(folder, get_all=True):
-    return {name: get_contours(folder + '/' + name, get_all)
-            for name in os.listdir(path='./' + folder)}
+def read_contours(filename, get_all=False):
+    with open(filename, 'r') as f:
+        text = f.read()
+    poligons = [[[int(e) for e in line.split()] 
+        for line in p.split('\n')[1:]] 
+        for p in text.split('Polygon')[1:]]
+    contours = [np.array([line[0] + 1j * line[1] 
+                          for line in p
+                          if len(line) == 2], dtype=complex)
+                for p in poligons
+                if len(p) >= 3] 
+    if get_all:
+        return contours
+    contours.sort(key=len)
+    return [contours[-1]]
+
+
+def from_folder(folder, get_all=True, from_txt=False):
+    func = read_contours if from_txt else get_contours
+    return {name: func(folder + '/' + name, get_all)
+            for name in os.listdir(path='./' + folder)
+            if not from_txt or name.endswith('.txt')}
 
 
 def fix_period(u, n_mult=2):
@@ -79,7 +101,7 @@ def fix_period(u, n_mult=2):
     w -- complex array, contour points with equal paths along the contour
         between each adjacent pair
     """
-    n = len(u) * n_mult
+    n = int(len(u) * n_mult)
     u_next = np.zeros(u.shape, dtype=complex)
     u_next[:-1] = u[1:]
     u_next[-1] = u[0]

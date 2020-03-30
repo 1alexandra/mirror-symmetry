@@ -138,8 +138,7 @@ def measure_axis(dots, N):
     """
     theta = find_theta(dots)
     b = np.imag(dots * np.exp(-1j * theta))
-    # было (np.sum(b*b)/N)**0.5
-    return np.sum(b * b)**0.5 / N, theta
+    return np.sum(b * b / N) **0.5, theta
 
 
 def new_start_point(f, s, ind=None):
@@ -185,9 +184,9 @@ def find_sym(
     return q, (sym_point, sym_vec)
 
 
-def get_drawing_args(folder):
+def get_drawing_args(folder, get_all=True, from_txt=False):
     drawing_args = []
-    for name, u_list in zc.from_folder(folder).items():
+    for name, u_list in zc.from_folder(folder, get_all, from_txt).items():
         for u in u_list:
             q, (p, v) = find_sym(u)
             drawing_args.append([u, p, v, q])
@@ -195,10 +194,15 @@ def get_drawing_args(folder):
     return drawing_args
 
 
-def write_axis_points(folder, filename='result.txt', get_all=False):
+def write_axis_points(
+    folder,
+    filename='result.txt',
+    get_all=False,
+    from_txt=False
+):
     time_start = time()
     with open(folder+'/'+filename, 'w') as file:
-        for name, u_list in zc.from_folder(folder, get_all).items():
+        for name, u_list in zc.from_folder(folder, get_all, from_txt).items():
             for u in u_list:
                 q, (p, v) = find_sym(u)
                 p1, p2 = axis_points(u, p, v)
