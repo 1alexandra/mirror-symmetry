@@ -8,17 +8,18 @@ def u_to_cnt(u):
     input: complex array
     output: cv2 contour (int32)
     """
-    return np.array([[np.real(u),
-                      np.imag(u)
-                     ]]).T.reshape((-1,1,2)).astype(np.int32)
+    cnt = [np.real(u), np.imag(u)]
+    return np.array([cnt]).T.reshape((-1, 1, 2)).astype(np.int32)
+
 
 def cnt_to_u(contour):
     """
     input: cv2 contour
     output: complex array
     """
-    cnt = contour.reshape((-1,2))
-    return cnt[:,0] + 1j * cnt[:,1]
+    cnt = contour.reshape((-1, 2))
+    return cnt[:, 0] + 1j * cnt[:, 1]
+
 
 def binarize(image):
     """
@@ -27,20 +28,22 @@ def binarize(image):
     output:
     image -- cv2 binarized image, with only 0 and 255 values.
     """
-    blurred = cv2.GaussianBlur(image, (5,5), 0)
+    blurred = cv2.GaussianBlur(image, (5, 5), 0)
     img = np.array(blurred, dtype=np.uint8)
     img *= (int)(255 / np.max(img))
     img = img[::-1]
     _, img = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
-    if img[0,0] == 255:
+    if img[0, 0] == 255:
         img = 255 - img
     return img
 
-def get_contours(path, get_all = False, min_area = 50):
+
+def get_contours(path, get_all=False, min_area=50):
     """
     input:
     image -- cv2 read bw image,
-    get_all -- bool, do you need all contours (True) or only the biggest (False)
+    get_all -- bool, do you need all contours (True),
+        or only the biggest (False)
     output:
     list of comlex arrays
     """
@@ -50,21 +53,22 @@ def get_contours(path, get_all = False, min_area = 50):
     image = binarize(img)
     w, h = image.shape
     margin = 1
-    img = np.zeros((w+2*margin,h+2*margin), dtype=np.uint8)
-    img[margin:-margin,margin:-margin] = image
-    contours, _ = cv2.findContours(img,
-                                   cv2.RETR_EXTERNAL,
+    img = np.zeros((w + 2*margin, h + 2*margin), dtype=np.uint8)
+    img[margin:-margin, margin:-margin] = image
+    contours, _ = cv2.findContours(img, cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_NONE)
     measure = np.array([cv2.contourArea(cnt) for cnt in contours])
     if get_all:
         index = np.arange(len(measure))[measure >= min_area]
     else:
         index = [np.argmax(measure)]
-    return [cnt_to_u(contours[i])-margin*(1+1j) for i in index]
+    return [cnt_to_u(contours[i]) - margin*(1+1j) for i in index]
+
 
 def from_folder(folder, get_all=True):
-    return {name: get_contours(folder+'/'+name, get_all)
-            for name in os.listdir(path='./'+folder)}
+    return {name: get_contours(folder + '/' + name, get_all)
+            for name in os.listdir(path='./' + folder)}
+
 
 def fix_period(u, n_mult=2):
     """
@@ -79,7 +83,7 @@ def fix_period(u, n_mult=2):
     u_next = np.zeros(u.shape, dtype=complex)
     u_next[:-1] = u[1:]
     u_next[-1] = u[0]
-    step = np.sum(np.abs(u-u_next)) / n
+    step = np.sum(np.abs(u - u_next)) / n
     seg_ind = 0
     seg_start = u[0]
     cur_step = step
@@ -100,9 +104,10 @@ def fix_period(u, n_mult=2):
                 break
     return np.array(w)
 
+
 def add_middles(u, mid_iters=1):
     """
-    input: 
+    input:
     u_ -- complex array, contour points,
     mid_iters -- int,
     output:
@@ -112,13 +117,14 @@ def add_middles(u, mid_iters=1):
     parts = 2 ** mid_iters
     steps = (1/parts) * np.arange(parts)
     for i in range(len(u)):
-        cur = u[(i+1)%len(u)] - u[i]
+        cur = u[(i+1) % len(u)] - u[i]
         u_m += list(u[i] + steps * cur)
-    return np.array(u_m)    
-        
+    return np.array(u_m)
+
+
 def preprocess(u):
     """
-    input: 
+    input:
     u_ -- complex array, contour points,
     output:
     preprocessed u, comlex array:
@@ -129,11 +135,13 @@ def preprocess(u):
     u = (u-vec)/scale.
     """
     vec = np.min(np.real(u)) + np.min(np.imag(u)) * 1j
-    scale = np.max(np.abs(u-vec))
-    return (u-vec) / scale, vec, scale
+    scale = np.max(np.abs(u - vec))
+    return (u - vec) / scale, vec, scale
+
 
 def preprocess_inverse(u, vec, scale):
     return u * scale + vec
+
 
 def index_neighbors(u, z, delta=5):
     """
