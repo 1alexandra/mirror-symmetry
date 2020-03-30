@@ -71,14 +71,17 @@ def get_contours(path, get_all=False, min_area=50):
 def read_contours(filename, get_all=False):
     with open(filename, 'r') as f:
         text = f.read()
-    poligons = [[[int(e) for e in line.split()] 
-        for line in p.split('\n')[1:]] 
-        for p in text.split('Polygon')[1:]]
-    contours = [np.array([line[0] + 1j * line[1] 
-                          for line in p
-                          if len(line) == 2], dtype=complex)
-                for p in poligons
-                if len(p) >= 3] 
+    poligons = [
+        [
+            [int(e) for e in line.split()]
+            for line in p.split('\n')[1:]
+        ]
+        for p in text.split('Polygon')[1:]
+    ]
+    contours = [
+        np.array([line[0] + 1j * line[1] for line in p if len(line) == 2])
+        for p in poligons if len(p) >= 3
+    ]
     if get_all:
         return contours
     contours.sort(key=len)
@@ -137,9 +140,9 @@ def add_middles(u, mid_iters=1):
     """
     u_m = []
     parts = 2 ** mid_iters
-    steps = (1/parts) * np.arange(parts)
+    steps = (1 / parts) * np.arange(parts)
     for i in range(len(u)):
-        cur = u[(i+1) % len(u)] - u[i]
+        cur = u[(i + 1) % len(u)] - u[i]
         u_m += list(u[i] + steps * cur)
     return np.array(u_m)
 

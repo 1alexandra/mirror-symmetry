@@ -138,7 +138,7 @@ def measure_axis(dots, N):
     """
     theta = find_theta(dots)
     b = np.imag(dots * np.exp(-1j * theta))
-    return np.sum(b * b / N) **0.5, theta
+    return np.sum(b * b / N) ** 0.5, theta
 
 
 def new_start_point(f, s, ind=None):
