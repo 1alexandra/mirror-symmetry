@@ -27,7 +27,11 @@ def axis_points(u, p, vec):
     mask[np.arange(ind1 - margin, ind1 + margin + 1) % len(u)] = False
     u_part = u[mask]
     ind_part2 = nearest_to_line(u_part, p, p + vec)
-    return u[ind1], u_part[ind_part2]
+    p1, p2 = u[ind1], u_part[ind_part2]
+    if (np.imag(p1) > np.imag(p2)
+            or np.imag(p1) == np.imag(p2) and np.real(p1) > np.real(p2)):
+        p1, p2 = p2, p1
+    return p1, p2
 
 
 def hull_based_index(u, delta=None):
@@ -138,7 +142,7 @@ def measure_axis(dots, N):
     """
     theta = find_theta(dots)
     b = np.imag(dots * np.exp(-1j * theta))
-    return np.sum(b * b / N) ** 0.5, theta
+    return np.sum(b * b) ** 0.5 / N, theta
 
 
 def new_start_point(f, s, ind=None):
@@ -161,9 +165,10 @@ def find_sym(
     alpha=0,
     beta=1,
     delta_neib=None,
+    n_mult=2,
     q_th=np.inf
 ):
-    u, vec, scale = zc.preprocess(zc.fix_period(u_))
+    u, vec, scale = zc.preprocess(zc.fix_period(u_, n_mult))
     f = np.fft.fft(u)
     N = len(u)
     by_hull, *_ = hull_based_index(u, delta_hull)

@@ -98,9 +98,8 @@ def draw_contour(
     if method == 'plt':
         plt.xlabel('Re')
         plt.ylabel('Im')
-        plt.xlim(x1, x2)
-        plt.ylim(y1, y2)
         plt.axis('equal')
+        plt.grid()
         if edge_color:
             x = np.zeros(len(u) + 1)
             x[:-1] = np.real(u)
@@ -118,7 +117,6 @@ def draw_contour(
                      axis_marker, label='Symmetry axis')
         if label:
             plt.legend()
-        plt.grid()
     elif method == 'cv2':
         if right > 10 or up > 10 or down < -10 or left < -10:
             scale = 1
@@ -173,6 +171,24 @@ def plot_measure(q):
     plt.legend()
 
 
+def plot_descriptor(f, theta):
+    vec = np.exp(theta * 1j)
+    scale = np.max(np.abs(f)) * 1.1
+    v1, v2 = scale * vec, - scale * vec
+    plt.xlabel('Re')
+    plt.ylabel('Im')
+    plt.axis('equal')
+    plt.grid()
+    plt.plot([np.real(v1), np.real(v2)], [np.imag(v1), np.imag(v2)],
+             color='gray', linestyle='-', label='best line')
+    plt.plot([0], [0], 'r+', label='zero (0+0j)')
+    plt.scatter(np.real(f[1:]), np.imag(f[1:]), c=np.log(np.abs(f[1:])),
+                cmap='jet', label='Fourier coefficients')
+    plt.legend()
+    cb = plt.colorbar()
+    cb.set_label('abs')
+
+
 def draw_hull(u, u_h, h, m):
     plt.title('Hull based search')
     plt.grid()
@@ -202,24 +218,27 @@ def draw_hull(u, u_h, h, m):
     plt.legend()
 
 
-def plot_f_abs(f, eps, garms, ind):
+def plot_f_abs(f, eps=None, garms=None, ind=None):
     plt.title("FD coefficients' importance")
     plt.xlabel('l - coefficien index (l>0)')
     plt.ylabel('importance')
     g = np.log(np.abs(f[1:]))
     left, right = -1, len(f)
     up, down = np.max(g) + 1, np.min(g) - 1
-    x1, x2 = garms // 2, len(f) - garms // 2
     plt.plot(np.arange(1, len(f)), g, label='log|f|')
-    plt.plot([left, right], [np.log(eps), np.log(eps)], 'c--')
-    plt.plot([x1, x1], [down, up], 'c-.')
-    plt.plot([x2, x2], [down, up], 'c-.')
-    plt.plot(ind, np.log(np.abs(f[ind])), 'go')
+    if garms:
+        x1, x2 = garms // 2, len(f) - garms // 2
+        plt.plot([x1, x1], [down, up], 'c-.')
+        plt.plot([x2, x2], [down, up], 'c-.')
+    if eps:
+        plt.plot([left, right], [np.log(eps), np.log(eps)], 'c--')
+    if ind:
+        plt.plot(ind, np.log(np.abs(f[ind])), 'go')
     plt.grid()
     plt.legend()
 
 
-def savefig(name, fmt='eps'):
+def savefig(name, fmt='png'):
     plt.savefig(name + '.' + fmt, format=fmt, bbox_inches='tight')
 
 

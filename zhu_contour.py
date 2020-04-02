@@ -95,7 +95,7 @@ def from_folder(folder, get_all=True, from_txt=False):
             if not from_txt or name.endswith('.txt')}
 
 
-def fix_period(u, n_mult=2):
+def fix_period(u_, n_mult):
     """
     input:
     u -- complex array, contour points,
@@ -104,6 +104,7 @@ def fix_period(u, n_mult=2):
     w -- complex array, contour points with equal paths along the contour
         between each adjacent pair
     """
+    u = np.roll(u_, np.random.randint(len(u_)))
     n = int(len(u) * n_mult)
     u_next = np.zeros(u.shape, dtype=complex)
     u_next[:-1] = u[1:]
