@@ -67,7 +67,7 @@ def hull_based_index(u, delta=None):
     return by_hull, hull_ind, middles
 
 
-def f_abs_based_index(f, alpha=0, beta=1, ret_zero=False):
+def f_abs_based_index(f, beta=1, ret_zero=False):
     """
     input:
     f -- complex array, Fourier Descriptor (FD),
@@ -82,15 +82,11 @@ def f_abs_based_index(f, alpha=0, beta=1, ret_zero=False):
         eps(alpha) is linear.
     """
     N = len(f)
-    a1 = np.min(np.abs(f[1:]))
-    a2 = np.max(np.abs(f[1:]))
-    eps = a1 + (a2 - a1) * alpha
-    garms = N * beta
+    garms = max(2, N * beta)
     ind = np.arange(N)
-    crit_1 = np.abs(f) >= eps
-    crit_1[0] = ret_zero
-    crit_2 = np.logical_or(ind <= garms/2, ind >= N - garms/2)
-    return ind[crit_1 * crit_2], eps, garms
+    crit = np.logical_or(ind <= garms/2, ind >= N - garms/2)
+    crit[0] = ret_zero
+    return ind[crit], garms
 
 
 def find_theta(dots):
@@ -161,10 +157,9 @@ def new_start_point(f, s, ind=None):
 
 def find_sym(
     u_,
-    delta_hull=None,
-    alpha=0,
-    beta=1,
-    delta_neib=None,
+    delta_hull=3,
+    beta=0.2,
+    delta_neib=10,
     n_mult=2,
     q_th=np.inf
 ):
@@ -172,7 +167,7 @@ def find_sym(
     f = np.fft.fft(u)
     N = len(u)
     by_hull, *_ = hull_based_index(u, delta_hull)
-    f_ind, *_ = f_abs_based_index(f, alpha, beta)
+    f_ind, *_ = f_abs_based_index(f, beta)
     qs1 = [measure_axis(new_start_point(f, s, f_ind), N)[0]
            for s in by_hull]
     approx_ind = by_hull[np.argmin(qs1)]

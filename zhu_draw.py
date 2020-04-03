@@ -218,7 +218,7 @@ def draw_hull(u, u_h, h, m):
     plt.legend()
 
 
-def plot_f_abs(f, eps=None, garms=None, ind=None):
+def plot_f_abs(f, garms=None, ind=None):
     plt.title("FD coefficients' importance")
     plt.xlabel('l - coefficien index (l>0)')
     plt.ylabel('importance')
@@ -230,8 +230,6 @@ def plot_f_abs(f, eps=None, garms=None, ind=None):
         x1, x2 = garms // 2, len(f) - garms // 2
         plt.plot([x1, x1], [down, up], 'c-.')
         plt.plot([x2, x2], [down, up], 'c-.')
-    if eps:
-        plt.plot([left, right], [np.log(eps), np.log(eps)], 'c--')
     if ind:
         plt.plot(ind, np.log(np.abs(f[ind])), 'go')
     plt.grid()
