@@ -1,6 +1,9 @@
+import os
+import subprocess
+
 import numpy as np
 import cv2
-import os
+from PIL import Image
 
 
 def u_to_cnt(u):
@@ -41,7 +44,7 @@ def binarize(image, gauss=0):
     return img
 
 
-def get_contours(path, get_all=False, min_area=50):
+def get_contours(path, get_all=False, min_area=100):
     """
     input:
     image -- cv2 read bw image,
@@ -68,7 +71,26 @@ def get_contours(path, get_all=False, min_area=50):
     return [cnt_to_u(contours[i]) - margin*(1+1j) for i in index]
 
 
-def read_contours(filename, get_all=False):
+def create_contour_txt(filename):
+    img = cv2.imread(filename, 0)
+    if img is None:
+        return
+    newfilename = filename[:-4] + '.bmp'
+    data = (255 - binarize(img)) // 255
+    img = Image.new('1', data.shape)
+    pixels = img.load()
+    for i in range(img.size[0]):
+        for j in range(img.size[1]):
+            pixels[i, j] = (data[i][j],)
+    img = img.transpose(Image.ROTATE_90)
+    img.save(newfilename)
+    path = 'Dima2/release/border.exe'
+    subprocess.run(['./' + path, newfilename[:-4]], capture_output=True)
+
+
+def read_contours(filename, get_all=False, min_area=100):
+    if not os.path.isfile(filename):
+        return []
     with open(filename, 'r') as f:
         text = f.read()
     poligons = [
@@ -82,17 +104,31 @@ def read_contours(filename, get_all=False):
         np.array([line[0] + 1j * line[1] for line in p if len(line) == 2])
         for p in poligons if len(p) >= 3
     ]
+    contours = [u for u in contours
+                if cv2.contourArea(u_to_cnt(u)) >= min_area]
     if get_all:
         return contours
     contours.sort(key=len)
-    return [contours[-1]]
+    return [contours[-1]] if len(contours) else []
 
 
 def from_folder(folder, get_all=True, from_txt=False):
     func = read_contours if from_txt else get_contours
-    return {name: func(folder + '/' + name, get_all)
-            for name in os.listdir(path='./' + folder)
-            if not from_txt or name.endswith('.txt')}
+    ans = {}
+    if from_txt:
+        for name in os.listdir(path='./' + folder):
+            path = folder + '/' + name
+            if (not name.endswith('.txt')
+                    and not os.path.isfile(path[:-4] + '.txt')):
+                create_contour_txt(path)
+    for name in os.listdir(path='./' + folder):
+        path = folder + '/' + name
+        if name.endswith('.txt'):
+            continue
+        if (from_txt and not name.endswith('.txt')):
+            path = path[:-4] + '.txt'
+        ans[name] = func(path, get_all)
+    return ans
 
 
 def fix_period(u_, n_mult):
@@ -105,7 +141,7 @@ def fix_period(u_, n_mult):
         between each adjacent pair
     """
     u = np.roll(u_, np.random.randint(len(u_)))
-    n = int(len(u) * n_mult)
+    n = max(int(len(u) * n_mult), 3)
     u_next = np.zeros(u.shape, dtype=complex)
     u_next[:-1] = u[1:]
     u_next[-1] = u[0]
