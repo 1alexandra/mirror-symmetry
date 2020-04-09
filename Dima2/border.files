@@ -1,9 +1,0 @@
-BitMatrix.cpp
-BitMatrix.h
-KonturTrace.cpp
-KonturTrace.h
-SimSet.cpp
-SimSet.h
-border.pro
-fast_cast.h
-main.cpp
