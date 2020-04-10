@@ -268,6 +268,10 @@ def subploter(drawing_args, cols=5, figscale=5):
     It draws by plt subplots with cv2 images
     with contours and symmetry axises, titled by "Q=...".
     """
+    if len(drawing_args) == 1:
+        imshow_bw(draw_contour('cv2', u, p, v),
+                  title=f'Q={round(q, 4)}')
+        return
     rows = (len(drawing_args) + cols - 1) // cols
     fig, axs = plt.subplots(rows, cols,
                             figsize=(figscale*cols, figscale*rows))
@@ -277,4 +281,4 @@ def subploter(drawing_args, cols=5, figscale=5):
         col = i % cols
         imshow_bw(draw_contour('cv2', u, p, v),
                   title=f'Q={round(q, 4)}',
-                  ax=axs[row][col])
+                  ax=axs[row][col] if rows != 1 else axs[col])
