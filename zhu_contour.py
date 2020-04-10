@@ -205,7 +205,7 @@ def preprocess_inverse(u, vec, scale):
     return u * scale + vec
 
 
-def index_neighbors(u, z, delta=5):
+def index_neighbors(u, ind, delta=5):
     """
     input:
     u -- complex array, contour points,
@@ -214,9 +214,10 @@ def index_neighbors(u, z, delta=5):
     output:
     indexes of u elements which are nearest neighbours of points z.
     """
-    if delta is None:
-        return np.arange(len(u))
-    u_step = np.array(list(u[1:]) + [u[0]])
-    tmp = max(np.min(np.abs(u_step - u)), 1)
-    delta_new = delta * tmp
-    return np.arange(len(u))[np.abs(u-z) <= delta_new]
+    # if delta is None:
+    #     return np.arange(len(u))
+    # u_step = np.array(list(u[1:]) + [u[0]])
+    # tmp = max(np.min(np.abs(u_step - u)), 1)
+    # delta_new = delta * tmp
+    # return np.arange(len(u))[np.abs(u-z) <= delta_new]
+    return np.arange(ind - delta, ind + delta + 1) % len(u)

@@ -159,14 +159,19 @@ def imshow_bw(img, title='', cmap='gray', ax=None):
         ax.imshow(255 - img, cmap=cmap)
 
 
-def plot_measure(q):
-    ind = np.argmin(q)
+def plot_measure(n, q, index=None):
+    if index is None:
+        index = np.arange(len(q))
+    min_ind = index[np.argmin(q)]
+    min_val = np.min(q)
     plt.title('Asymmetry measure for contour points')
+    plt.xlim(-1, n)
     plt.xlabel('p - point index')
     plt.ylabel('Q - asymmetry measure')
-    plt.plot(q, label='Q(p)')
-    plt.plot([ind], [q[ind]], 'ro',
-             label='min(Q) = ' + str(round(q[ind], 3)))
+    plt.plot(index, q, 'g-')
+    plt.plot(index, q, 'go', label='Q(p)')
+    plt.plot([min_ind], [min_val], 'ro',
+             label='min(Q) = ' + str(round(min_val, 3)))
     plt.grid()
     plt.legend()
 
@@ -271,5 +276,5 @@ def subploter(drawing_args, cols=5, figscale=5):
         row = i // cols
         col = i % cols
         imshow_bw(draw_contour('cv2', u, p, v),
-                  title=f'N={len(u)}, Q={round(q, 2)}',
+                  title=f'Q={round(q, 4)}',
                   ax=axs[row][col])

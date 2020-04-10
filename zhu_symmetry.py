@@ -2,6 +2,8 @@ import numpy as np
 from scipy.spatial import ConvexHull
 from time import time
 import zhu_contour as zc
+import zhu_draw as zd
+from matplotlib import pyplot as plt
 
 
 def nearest_to_line(u, z1, z2):
@@ -62,7 +64,7 @@ def hull_based_index(u, delta=None):
     hull_mid = np.unique(np.ravel([hull_ind, middles]))
     by_hull = []
     for ind in hull_mid:
-        by_hull += list(zc.index_neighbors(u, u[ind], delta))
+        by_hull += list(zc.index_neighbors(u, ind, delta))
     by_hull = np.unique(np.ravel(by_hull))
     return by_hull, hull_ind, middles
 
@@ -171,7 +173,7 @@ def find_sym(
     qs1 = [measure_axis(new_start_point(f, s, f_ind), N)[0]
            for s in by_hull]
     approx_ind = by_hull[np.argmin(qs1)]
-    neibs = zc.index_neighbors(u, u[approx_ind], delta_neib)
+    neibs = zc.index_neighbors(u, approx_ind, delta_neib)
     all_f_ind = np.arange(1, N)
     qs2 = [measure_axis(new_start_point(f, s, all_f_ind), N)[0]
            for s in neibs]
