@@ -195,14 +195,20 @@ def get_drawing_args(folder, get_all=True, from_txt=False):
 
 
 def write_axis_points(
-    folder,
-    filename='result.txt',
+    img_folder,
+    res_filename=None,
     get_all=False,
     from_txt=False
 ):
+    if res_filename is None:
+        rimg_folder = img_folder.rstrip('/').rstrip('\\')
+        right_sep = img_folder.rfind('/')
+        if right_sep == -1:
+            right_sep = img_folder.rfind('\\')
+        res_filename = img_folder[right_sep+1:] + '_results.txt'
     time_start = time()
-    with open(folder+'/'+filename, 'w') as file:
-        for name, u_list in zc.from_folder(folder, get_all, from_txt).items():
+    with open('results/' + res_filename, 'w') as file:
+        for name, u_list in zc.from_folder(img_folder, get_all, from_txt).items():
             for u in u_list:
                 q, (p, v) = find_sym(u)
                 p1, p2 = axis_points(u, p, v)

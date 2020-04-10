@@ -237,7 +237,7 @@ def plot_f_abs(f, garms=None, ind=None):
 
 
 def savefig(name, fmt='png'):
-    plt.savefig(name + '.' + fmt, format=fmt, bbox_inches='tight')
+    plt.savefig('results/' + name + '.' + fmt, format=fmt, bbox_inches='tight')
 
 
 def bw_to_rgb(img):
