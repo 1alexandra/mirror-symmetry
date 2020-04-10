@@ -36,6 +36,12 @@ def axis_points(u, p, vec):
     return p1, p2
 
 
+def join_index(*inds):
+    if len(inds) == 1:
+        return np.unique(inds[0])
+    return np.unique(np.concatenate(inds))
+
+
 def hull_based_index(u, delta=None):
     """
     input:
@@ -60,12 +66,12 @@ def hull_based_index(u, delta=None):
     for i in range(len(hull)):
         z = (hull[i] + hull[(i + 1) % len(hull)]) / 2
         middles.append(nearest_to_line(u, z, centroid))
-    middles = np.array(middles)
-    hull_mid = np.unique(np.ravel([hull_ind, middles]))
+    middles = np.unique(middles)
+    hull_mid = join_index(hull_ind, middles)
     by_hull = []
     for ind in hull_mid:
         by_hull += list(zc.index_neighbors(u, ind, delta))
-    by_hull = np.unique(np.ravel(by_hull))
+    by_hull = np.unique(by_hull)
     return by_hull, hull_ind, middles
 
 
@@ -154,7 +160,16 @@ def new_start_point(f, s, ind=None):
     """
     N = len(f)
     ind = ind if (ind is not None) else np.arange(N)
-    return f[ind] * np.exp(-1j * 2 * np.pi / N * ind * (N-s))
+    return f[ind] * np.exp(-1j * 2 * np.pi / N * ind * (N - s))
+
+
+def find_local_minimas(q, q_th=np.inf):
+    q = np.array(q, dtype=float)
+    N = len(q)
+    crit1 = q <= q[(np.arange(N) - 1) % N]
+    crit2 = q <= q[(np.arange(N) + 1) % N]
+    crit3 = q <= q_th
+    return np.arange(N)[crit1 * crit2 * crit3]
 
 
 def find_sym(
@@ -163,7 +178,9 @@ def find_sym(
     beta=0.2,
     delta_neib=10,
     n_mult=2,
-    q_th=np.inf
+    q_th=0.025,# np.inf,
+    theta_eps=0.1,
+    find_all=True
 ):
     u, vec, scale = zc.preprocess(zc.fix_period(u_, n_mult))
     f = np.fft.fft(u)
@@ -172,26 +189,55 @@ def find_sym(
     f_ind, *_ = f_abs_based_index(f, beta)
     qs1 = [measure_axis(new_start_point(f, s, f_ind), N)[0]
            for s in by_hull]
-    approx_ind = by_hull[np.argmin(qs1)]
-    neibs = zc.index_neighbors(u, approx_ind, delta_neib)
+    if find_all:
+        ind_min_qs1 = by_hull[find_local_minimas(qs1)]
+    else:
+        ind_min_qs1 = [by_hull[np.argmin(qs1)]]
+    neibs = []
+    for approx_ind in ind_min_qs1: 
+        neibs.append(zc.index_neighbors(u, approx_ind, delta_neib))
+    neibs = join_index(*tuple(neibs))
     all_f_ind = np.arange(1, N)
     qs2 = [measure_axis(new_start_point(f, s, all_f_ind), N)[0]
            for s in neibs]
-    sym_ind = neibs[np.argmin(qs2)]
-    q, theta = measure_axis(new_start_point(f, sym_ind, all_f_ind), N)
-    sym_point, sym_vec = None, None
-    if q <= q_th:
+    if find_all:
+        ind_min_qs2 = neibs[find_local_minimas(qs2)]
+    else:
+        ind_min_qs2 = [neibs[np.argmin(qs2)]]
+    axs = []
+    bad_axs = []
+    for sym_ind in ind_min_qs2:
+        q, theta = measure_axis(new_start_point(f, sym_ind, all_f_ind), N)
         sym_point = zc.preprocess_inverse(u[sym_ind], vec, scale)
         sym_vec = np.exp(1j * theta)
-    return q, (sym_point, sym_vec)
+        if q <= q_th:
+            axs.append((q, sym_point, sym_vec))
+        else:
+            bad_axs.append((q, sym_point, sym_vec))
+    if not len(axs):
+        bad_axs.sort(key=lambda x: x[0])
+        axs = [bad_axs[0]]
+    axs.sort(key=lambda x: np.angle(x[2]))
+    last_theta = np.angle(axs[0][2])
+    cur_ind = 1
+    while cur_ind < len(axs):
+        cur_theta = np.angle(axs[cur_ind][2])
+        if cur_theta - last_theta < theta_eps:
+            axs = axs[:cur_ind] + axs[cur_ind+1:]
+        else:
+            last_theta = cur_theta
+            cur_ind += 1
+    axs.sort(key=lambda x: x[0])
+    return np.min(qs2), axs
 
 
 def get_drawing_args(folder, get_all=True, from_txt=False):
     drawing_args = []
     for name, u_list in zc.from_folder(folder, get_all, from_txt).items():
         for u in u_list:
-            q, (p, v) = find_sym(u)
-            drawing_args.append([u, p, v, q])
+            Q, axs = find_sym(u)
+            for (q, p, v) in axs:
+                drawing_args.append([u, p, v, q, Q])
     drawing_args.sort(key=lambda x: x[-1])
     return drawing_args
 
@@ -212,7 +258,8 @@ def write_axis_points(
     with open('results/' + res_filename, 'w') as file:
         for name, u_list in zc.from_folder(img_folder, get_all, from_txt).items():
             for u in u_list:
-                q, (p, v) = find_sym(u)
-                p1, p2 = axis_points(u, p, v)
-                file.write(' '.join([name, str(p1), str(p2), str(q)]) + '\n')
+                Q, axs = find_sym(u)
+                for (q, p, v) in axs:
+                    p1, p2 = axis_points(u, p, v)
+                    file.write(' '.join([name, str(p1), str(p2), str(q)]) + '\n')
         file.write('Total time: '+str(round(time() - time_start, 3)))

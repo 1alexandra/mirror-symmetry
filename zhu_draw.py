@@ -276,7 +276,7 @@ def subploter(drawing_args, cols=5, figscale=5):
     fig, axs = plt.subplots(rows, cols,
                             figsize=(figscale*cols, figscale*rows))
     plt.setp(axs, xticks=[], yticks=[])
-    for i, (u, p, v, q) in enumerate(drawing_args):
+    for i, (u, p, v, q, Q) in enumerate(drawing_args):
         row = i // cols
         col = i % cols
         imshow_bw(draw_contour('cv2', u, p, v),
