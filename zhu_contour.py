@@ -71,11 +71,13 @@ def get_contours(path, get_all=False, min_area=100):
     return [cnt_to_u(contours[i]) - margin*(1+1j) for i in index]
 
 
-def create_contour_txt(filename):
+def create_contour_txt(filename, result_folder):
     img = cv2.imread(filename, 0)
     if img is None:
         return
-    newfilename = filename[:-4] + '.bmp'
+    name = os.path.basename(filename)
+    name, ext = os.path.splitext(name)
+    newfilename = result_folder + '/' + name
     data = (255 - binarize(img)) // 255
     img = Image.new('1', data.shape)
     pixels = img.load()
@@ -83,12 +85,12 @@ def create_contour_txt(filename):
         for j in range(img.size[1]):
             pixels[i, j] = (data[i][j],)
     img = img.transpose(Image.ROTATE_90)
-    img.save(newfilename)
-    path = 'Dima2/release/border.exe'
-    subprocess.run(['./' + path, newfilename[:-4]], capture_output=True)
+    img.save(newfilename + '.bmp')
+    subprocess.run(['./Dima2/release/border.exe', newfilename],
+                   capture_output=True)
 
 
-def read_contours(filename, get_all=False, min_area=100):
+def read_contours(filename, get_all=False, min_area=50):
     if not os.path.isfile(filename):
         return []
     with open(filename, 'r') as f:
@@ -112,22 +114,27 @@ def read_contours(filename, get_all=False, min_area=100):
     return [contours[-1]] if len(contours) else []
 
 
-def from_folder(folder, get_all=True, from_txt=False):
-    func = read_contours if from_txt else get_contours
+def from_folder(folder, get_all=True, from_txt=False, result_folder=None):
     ans = {}
     if from_txt:
+        result_folder = result_folder or folder+'/preprocessed'
+        if not os.path.isdir(result_folder):
+            os.mkdir(result_folder)
         for name in os.listdir(path='./' + folder):
             path = folder + '/' + name
             if (not name.endswith('.txt')
                     and not os.path.isfile(path[:-4] + '.txt')):
-                create_contour_txt(path)
+                create_contour_txt(path, result_folder)
     for name in os.listdir(path='./' + folder):
-        path = folder + '/' + name
-        if name.endswith('.txt'):
-            continue
-        if (from_txt and not name.endswith('.txt')):
-            path = path[:-4] + '.txt'
-        ans[name] = func(path, get_all)
+        if from_txt:
+            filename, ext = os.path.splitext(name)
+            path = result_folder + '/' + filename + '.txt'
+            contours = read_contours(path, get_all)
+        else:
+            path = folder + '/' + name
+            contours = get_contours(path, get_all)
+        if len(contours):
+            ans[name] = contours 
     return ans
 
 
