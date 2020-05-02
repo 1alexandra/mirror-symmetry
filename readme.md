@@ -1,1 +1,2 @@
-# Mirror Symmetry and Fourier Descriptor #
+# Mirror Symmetry Detection in Digital Images
+## based on Fourier Descriptor
