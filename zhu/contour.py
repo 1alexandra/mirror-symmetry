@@ -7,7 +7,6 @@ from zhu.tools import round_complex
 
 
 class Contour:
-    """Contour from list of polygon vertexes on the complex plane."""
     def __init__(
         self,
         u,
@@ -85,7 +84,7 @@ class Contour:
     def Edge_middles(self):
         if self.middles is None:
             u = self.origin
-            ms = [(u[i] + u[(i+1) % len(u)]) / 2 for i in range(len(u))]
+            ms = [(u[i] + u[(i + 1) % len(u)]) / 2 for i in range(len(u))]
             self.middles = np.array(ms, dtype=complex)
         return self.middles
 
@@ -115,7 +114,7 @@ class Contour:
         for i in range(int(self.Perimeter / step)):
             w.append(seg_start)
             while True:
-                seg_end = u[(seg_ind+1) % len(u)]
+                seg_end = u[(seg_ind + 1) % len(u)]
                 seg_vec = seg_end - seg_start
                 seg_len = abs(seg_vec)
                 if seg_len < cur_step:

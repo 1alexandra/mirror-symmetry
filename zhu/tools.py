@@ -4,7 +4,7 @@ from zhu import EPS
 
 
 def close(a, b, eps=EPS):
-    return abs(a-b) < eps
+    return abs(a - b) < eps
 
 
 def close_np(a, b, eps=EPS):
@@ -42,7 +42,7 @@ def index_neibs(u, i, neibs_coef):
     neibs = int(round(len(u) * neibs_coef))
     if neibs >= len(u):
         return np.arange(len(u))
-    return np.arange(i - neibs//2, i + neibs - neibs//2 + 1) % len(u)
+    return np.arange(i - neibs // 2, i + neibs - neibs // 2 + 1) % len(u)
 
 
 def join_index(*inds):

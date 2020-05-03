@@ -82,7 +82,7 @@ class Subploter:
         self,
         main_folder,
         subfolders=None,
-        res_folder='tmp_results',
+        res_folder='../subploter_results',
         format_='png',
         single=True,
         force_sort=True,

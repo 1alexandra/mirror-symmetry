@@ -77,7 +77,7 @@ class ResultWriter:
         self,
         main_folder,
         subfolders=None,
-        res_folder='results',
+        res_folder='../writer_results',
         format_='txt',
         single=True,
         log=True

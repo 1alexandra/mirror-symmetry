@@ -22,7 +22,7 @@ def prepare_scene(width=9, height=6):
     pylab.rcParams.update(params)
 
 
-def save_plot(name, format_='png', res_folder='results'):
+def save_plot(name, format_='png', res_folder='../plot_results'):
     if not os.path.isdir(res_folder):
         os.mkdir(res_folder)
     path = res_folder + '/' + name + '.' + format_

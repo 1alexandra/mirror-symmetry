@@ -28,7 +28,7 @@ class FourierDescriptor:
             crit = np.ones(N, dtype=bool)
         crit[0] = ret_zero
         index = index[crit]
-        coefs = np.exp(-1j * (2*np.pi/N) * (N-s) * index)
+        coefs = np.exp(-1j * (2 * np.pi / N) * (N - s) * index)
         return coefs * self.f_0[index]
 
     def smoothed(self, beta):
@@ -39,7 +39,7 @@ class FourierDescriptor:
     def angle(self, s, beta=1.0, f=None):
         f = f if f is not None else self.f_s(s, beta)
         a, b = np.real(f), np.imag(f)
-        k1, k2, k3 = np.sum(b*b), np.sum(a*a), 2 * np.sum(a*b)
+        k1, k2, k3 = np.sum(b * b), np.sum(a * a), 2 * np.sum(a * b)
         if k1 == k2:
             if k3 == 0:
                 return 0
@@ -47,11 +47,11 @@ class FourierDescriptor:
         elif k3 == 0:
             t1 = 0
         else:
-            t1 = np.arctan(k3 / (k1-k2)) / 2
-        ts = [0, t1, t1 + np.pi/2]
+            t1 = np.arctan(k3 / (k1 - k2)) / 2
+        ts = [0, t1, t1 + np.pi / 2]
         t_min = min(ts, key=lambda t: (
             k1 * np.cos(t)**2
-            + k2 * np.sin(t)**2
+            + k2 * np.sin(t) ** 2
             + 2 * k3 * np.sin(t) * np.cos(t)
         ))
         return -t_min % np.pi
@@ -62,7 +62,7 @@ class FourierDescriptor:
         f_rotated = f * np.exp(-1j * theta)
         t = np.imag(f_rotated)
         N = self.n
-        return np.sum(t*t) ** 0.5 / N
+        return np.sum(t * t) ** 0.5 / N
 
     def __str__(self):
         return f'Fourier Descriptor: signal={self.signal}, f_0={self.f_0}'

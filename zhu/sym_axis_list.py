@@ -21,9 +21,9 @@ class SymAxisList:
             goods.sort(key=lambda x: x.Vec.angle)
             i = 1
             while i < len(goods):
-                if i > 0 and goods[i].Vec.collinear(goods[i-1].Vec):
-                    rm_i = i if goods[i].q > goods[i-1].q else i-1
-                    goods[:] = goods[:rm_i] + goods[rm_i+1:]
+                if i > 0 and goods[i].Vec.collinear(goods[i - 1].Vec):
+                    rm_i = i if goods[i].q > goods[i - 1].q else i - 1
+                    goods[:] = goods[:rm_i] + goods[rm_i + 1:]
                 else:
                     i += 1
             goods.sort(key=lambda x: x.q)
