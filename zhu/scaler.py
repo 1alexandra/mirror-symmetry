@@ -21,4 +21,4 @@ class Scaler:
         return v_ * self.scale + self.vec
 
     def __str__(self):
-        return 'Scaler with scale={self.scale} and vec={self.vec}'
+        return f'Scaler with scale={self.scale} and vec={self.vec}'

@@ -7,6 +7,8 @@ from zhu import DIMA_BORDERS_EXE
 from zhu import MIN_CONTOUR_AREA
 from zhu import MULT_INIT
 
+from zhu.constants import Q_SIGNAL, Q_PIXELS
+
 
 class SymImage:
     def __init__(
@@ -18,6 +20,8 @@ class SymImage:
         min_area=MIN_CONTOUR_AREA,
         tmp_folder=None,
         binarizer_object=None,
+        q_max_signal=Q_SIGNAL,
+        q_max_pixels=Q_PIXELS,
         gauss=0
     ):
         self.img_path = data_folder + '/' + image_filename
@@ -29,6 +33,8 @@ class SymImage:
         self.mult_coef = mult_coef
         self.single = single
         self.min_area = min_area
+        self.q_max_signal = q_max_signal
+        self.q_max_pixels = q_max_pixels
         self.binarizer = binarizer_object or Binarizer(gauss)
         self.u_list = None
 
@@ -53,7 +59,7 @@ class SymImage:
         cl = self.Contours_list
         return cl[i]
 
-    def __len__(self, i):
+    def __len__(self):
         cl = self.Contours_list
         return len(cl)
 
@@ -88,7 +94,13 @@ class SymImage:
         ps = [[v.split() for v in u] for u in ps]
         ps = [[v for v in u if len(v) == 2] for u in ps]
         ps = [[to_complex(v) for v in u] for u in ps]
-        ps = [SymContour(u, self.mult_coef) for u in ps]
+        ps = [
+            SymContour(
+                u,
+                mult_coef=self.mult_coef,
+                q_max_signal=self.q_max_signal,
+                q_max_pixels=self.q_max_pixels
+            ) for u in ps]
 
         if not len(ps):
             return []

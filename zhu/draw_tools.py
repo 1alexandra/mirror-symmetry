@@ -53,6 +53,6 @@ def get_box(u):
     left, right = np.min(np.real(u)), np.max(np.real(u))
     down, up = np.min(np.imag(u)), np.max(np.imag(u))
     margin = max(right - left, up - down) * 0.1
-    small = Point(left - margin, down - margin)
-    big = Point(right + margin, up + margin)
+    small = Point(left - margin + 1j * (down - margin))
+    big = Point(right + margin  + 1j * (up + margin))
     return small, big

@@ -8,14 +8,9 @@ class FourierDescriptor:
         self.scaler = scaler or Scaler(signal)
         self.signal = self.scaler.predict(signal)
         self.n = len(signal)
-        self.f_0 = np.fft.fft(signal)
+        self.f_0 = np.fft.fft(self.signal)
 
-    def f_s(self, s, beta=1.0, ret_zero=False):
-        """FD coefficients with starting point cnt[s].
-
-        Return only max(2, N*beta) main coefficients, excluding zero.
-        Return zero coefficient based on a ret_zero parameter.
-        """
+    def criteria(self, beta, ret_zero):
         N = self.n
         index = np.arange(N)
         beta = min(beta, 1.0)
@@ -27,12 +22,25 @@ class FourierDescriptor:
         else:
             crit = np.ones(N, dtype=bool)
         crit[0] = ret_zero
+        return crit
+
+    def f_s(self, s, beta=1.0, ret_zero=False):
+        """FD coefficients with starting point cnt[s].
+
+        Return only max(2, N*beta) main coefficients, excluding zero.
+        Return zero coefficient based on a ret_zero parameter.
+        """
+        N = self.n
+        index = np.arange(N)
+        crit = self.criteria(beta, ret_zero)
         index = index[crit]
         coefs = np.exp(-1j * (2 * np.pi / N) * (N - s) * index)
         return coefs * self.f_0[index]
 
     def smoothed(self, beta):
-        f = self.f_s(0, beta, True)
+        f = self.f_0.copy()
+        crit = self.criteria(beta, True)
+        f[~crit] = 0.0 + 0.0j
         sm = np.fft.ifft(f)
         return self.scaler.inverse(sm)
 
@@ -66,3 +74,6 @@ class FourierDescriptor:
 
     def __str__(self):
         return f'Fourier Descriptor: signal={self.signal}, f_0={self.f_0}'
+
+    def __len__(self):
+        return len(self.signal)

@@ -33,7 +33,10 @@ class Binarizer:
             img = 255 - img
         return img
 
-    def create_mono_bmp(self, image_path, res_path):
+    def create_mono_bmp(self, image_path, res_path=None):
+        if res_path is None:
+            path, ext = os.path.splitext(image_path)
+            res_path = path + '.bmp'
         data = self.binarize(image_path)
         if data is None:
             return

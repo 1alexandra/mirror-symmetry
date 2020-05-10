@@ -1,8 +1,8 @@
 BETA_SIG = 0.2
 BETA_PIX = 1.0
-CMAP_DEFAULT = 'viridis'
-CMAP_ALTERNATIVE = 'inferno'
-CMAP_OTHER = 'gray'
+CMAP_DEFAULT = 'gray'  # 'viridis'
+CMAP_ALTERNATIVE = 'gray'  # 'inferno'
+CMAP_OTHER = 'magma'  # 'gray'
 DIMA_BORDERS_EXE = './../DimaBorders/release/border.exe'
 EPS = 1e-10
 MIN_CONTOUR_AREA = 100.0

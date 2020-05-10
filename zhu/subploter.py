@@ -13,34 +13,42 @@ from zhu.draw_tools import save_plot
 
 from zhu import CMAP_OTHER
 from zhu import Q_MAX_MULT
+from zhu import Q_SIGNAL, Q_PIXELS
 
 
 class Subploter:
     def __init__(
         self,
         cols=5,
+        rows=None,
         figscale=5,
         allow_multiple_lines=True,
-        force_single_axis=True
+        force_single_axis=True,
+        cmap_changing=True,
     ):
         self.cols = cols
+        self.rows = rows
         self.figscale = figscale
         self.multiple = allow_multiple_lines
         self.force_single_axis = force_single_axis
+        self.cmap_changing = cmap_changing
 
     def contour(self, sym_cnt):
         d = ContourDrawer(sym_cnt)
         if self.multiple:
             q = sym_cnt.Sym_measure
-            cmap = choose_cmap(sym_cnt.symmetrical())
+            cmap = choose_cmap(sym_cnt.symmetrical() and self.cmap_changing)
             return [(d.draw(sym_cnt.Axis_list), q, cmap)]
         else:
             ans = []
             for sym_axis in sym_cnt.Axis_list:
                 img = d.draw([sym_axis])
                 q = sym_axis.q
-                cmap = choose_cmap(q < sym_cnt.q_max_pix, None)
+                cmap = choose_cmap(
+                    q < sym_cnt.q_max_pix and self.cmap_changing, None)
                 ans.append((img, q, cmap))
+                if self.force_single_axis:
+                    break
             return ans
 
     def image(self, sym_image, last_cmap=None, q_max=np.inf):
@@ -83,10 +91,11 @@ class Subploter:
         main_folder,
         subfolders=None,
         res_folder='../subploter_results',
-        format_='png',
-        single=True,
+        format_='eps',
         force_sort=True,
-        log=True
+        single=True,
+        data_folder_kwargs={},
+        log=True,
     ):
         if subfolders is None:
             subfolders = os.listdir(path='./' + main_folder)
@@ -94,7 +103,9 @@ class Subploter:
             if log:
                 print(folder)
                 start = time()
-            df = DataFolder(main_folder + '/' + folder, single=single)
+            path = main_folder + '/' + folder
+            n = None if self.rows is None else self.cols * self.rows
+            df = DataFolder(path, **data_folder_kwargs, number=n)
             self.plot(self.folder(df, force_sort=force_sort))
             save_plot(
                 folder.split('/')[-1],
@@ -114,6 +125,11 @@ class Subploter:
             return
         cols = self.cols
         rows = (len(img_q_cmap_list) + cols - 1) // cols
+        if self.rows is not None and self.rows < rows:
+            rows = self.rows
+            index = np.random.permutation(len(img_q_cmap_list))[:rows * cols]
+            index = np.sort(index)
+            img_q_cmap_list = [img_q_cmap_list[i] for i in index]
         size = (self.figscale * cols, self.figscale * rows)
         fig, axs = plt.subplots(rows, cols, figsize=size)
         plt.setp(axs, xticks=[], yticks=[])

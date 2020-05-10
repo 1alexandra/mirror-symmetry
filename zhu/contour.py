@@ -111,7 +111,7 @@ class Contour:
         u = self.origin
         seg_ind, seg_start, cur_step = 0, u[0], step
         w = []
-        for i in range(int(self.Perimeter / step)):
+        for i in range(int(round(self.Perimeter / step))):
             w.append(seg_start)
             while True:
                 seg_end = u[(seg_ind + 1) % len(u)]
