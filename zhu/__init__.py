@@ -6,10 +6,12 @@ from zhu.constants import MIN_CONTOUR_AREA
 from zhu.constants import MIN_CONTOUR_N
 from zhu.constants import MIN_THETA_DIFF
 from zhu.constants import MULT_INIT
+from zhu.constants import N_MAX_SIGNAL, N_MAX_PIXELS
 from zhu.constants import NEIB_HULL, NEIB_APPR
 from zhu.constants import Q_MAX_MULT
 from zhu.constants import Q_SIGNAL, Q_PIXELS
 from zhu.constants import TIMEIT_ITERS
+from zhu.constants import USE_HULL
 
 from zhu.point import Point
 from zhu.vector import Vector
@@ -62,12 +64,15 @@ consants = [
     MIN_CONTOUR_N,
     MIN_THETA_DIFF,
     MULT_INIT,
+    N_MAX_PIXELS,
+    N_MAX_SIGNAL,
     NEIB_APPR,
     NEIB_HULL,
     TIMEIT_ITERS,
     Q_MAX_MULT,
     Q_PIXELS,
-    Q_SIGNAL
+    Q_SIGNAL,
+    USE_HULL
 ]
 
 __all__ = classes + consants

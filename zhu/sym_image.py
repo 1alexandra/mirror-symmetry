@@ -5,9 +5,6 @@ from zhu import Binarizer
 from zhu import SymContour
 from zhu import DIMA_BORDERS_EXE
 from zhu import MIN_CONTOUR_AREA
-from zhu import MULT_INIT
-
-from zhu.constants import Q_SIGNAL, Q_PIXELS
 
 
 class SymImage:
@@ -15,13 +12,11 @@ class SymImage:
         self,
         data_folder,
         image_filename,
-        mult_coef=MULT_INIT,
+        sym_contour_kwargs={},
         single=True,
         min_area=MIN_CONTOUR_AREA,
         tmp_folder=None,
         binarizer_object=None,
-        q_max_signal=Q_SIGNAL,
-        q_max_pixels=Q_PIXELS,
         gauss=0
     ):
         self.img_path = data_folder + '/' + image_filename
@@ -30,16 +25,18 @@ class SymImage:
             os.mkdir(self.tmp_folder)
         self.name, _ = os.path.splitext(image_filename)
         self.txt_path = self.tmp_folder + '/' + self.name + '.txt'
-        self.mult_coef = mult_coef
+        self.sc_kwargs = sym_contour_kwargs
         self.single = single
         self.min_area = min_area
-        self.q_max_signal = q_max_signal
-        self.q_max_pixels = q_max_pixels
         self.binarizer = binarizer_object or Binarizer(gauss)
         self.u_list = None
+        self.trained_neibs_hull = None
+        self.trained_neibs_appr = None
 
     Contours_list = property()
     Sym_measure = property()
+    Trained_neibs_hull = property()
+    Trained_neibs_appr = property()
 
     @Contours_list.getter
     def Contours_list(self):
@@ -54,6 +51,30 @@ class SymImage:
             min_cnt = min(cl, key=lambda x: x.Sym_measure)
             return min_cnt.Sym_measure
         return None
+
+    @Trained_neibs_hull.getter
+    def Trained_neibs_hull(self):
+        if self.trained_neibs_hull is None:
+            if not len(self):
+                return None
+            neibs = [sc.Trained_neibs_hull for sc in self]
+            neibs = [n for n in neibs if n is not None]
+            if not len(neibs):
+                return None
+            self.trained_neibs_hull = max(neibs)
+        return self.trained_neibs_hull
+
+    @Trained_neibs_appr.getter
+    def Trained_neibs_appr(self):
+        if self.trained_neibs_appr is None:
+            if not len(self):
+                return None
+            neibs = [sc.Trained_neibs_appr for sc in self]
+            neibs = [n for n in neibs if n is not None]
+            if not len(neibs):
+                return None
+            self.trained_neibs_appr = max(neibs)
+        return self.trained_neibs_appr
 
     def __getitem__(self, i):
         cl = self.Contours_list
@@ -94,13 +115,7 @@ class SymImage:
         ps = [[v.split() for v in u] for u in ps]
         ps = [[v for v in u if len(v) == 2] for u in ps]
         ps = [[to_complex(v) for v in u] for u in ps]
-        ps = [
-            SymContour(
-                u,
-                mult_coef=self.mult_coef,
-                q_max_signal=self.q_max_signal,
-                q_max_pixels=self.q_max_pixels
-            ) for u in ps]
+        ps = [SymContour(u, **self.sc_kwargs) for u in ps]
 
         if not len(ps):
             return []

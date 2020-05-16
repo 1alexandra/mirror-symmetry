@@ -38,8 +38,9 @@ def round_complex(u):
     return re + 1j * im
 
 
-def index_neibs(u, i, neibs_coef):
+def index_neibs(u, i, neibs_coef, min_neibs=0):
     neibs = int(round(len(u) * neibs_coef))
+    neibs = max(neibs, min_neibs)
     if neibs >= len(u):
         return np.arange(len(u))
     return np.arange(i - neibs // 2, i + neibs - neibs // 2 + 1) % len(u)
@@ -51,8 +52,8 @@ def join_index(*inds):
     return np.unique(np.concatenate(inds))
 
 
-def join_neibs(u, index, neibs_coef):
-    inds = [index_neibs(u, i, neibs_coef) for i in index]
+def join_neibs(u, index, neibs_coef, min_neibs=0):
+    inds = [index_neibs(u, i, neibs_coef, min_neibs) for i in index]
     return join_index(*tuple(inds))
 
 

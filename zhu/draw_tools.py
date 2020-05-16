@@ -41,9 +41,13 @@ def imshow_bw(img, q=None, cmap=CMAP_DEFAULT, ax=None):
         ax.imshow(255 - img, cmap=cmap)
 
 
-def choose_cmap(is_sym, last_cmap=None):
+def choose_cmap(is_sym, last_cmap=None, change=False):
     if not is_sym:
         return CMAP_OTHER
+    if not change:
+        if last_cmap is not None:
+            return last_cmap
+        return CMAP_DEFAULT
     if last_cmap is not CMAP_DEFAULT:
         return CMAP_DEFAULT
     return CMAP_ALTERNATIVE
@@ -54,5 +58,5 @@ def get_box(u):
     down, up = np.min(np.imag(u)), np.max(np.imag(u))
     margin = max(right - left, up - down) * 0.1
     small = Point(left - margin + 1j * (down - margin))
-    big = Point(right + margin  + 1j * (up + margin))
+    big = Point(right + margin + 1j * (up + margin))
     return small, big

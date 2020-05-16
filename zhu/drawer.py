@@ -49,7 +49,7 @@ def plot_complex_contour(
                 q = line.q
                 theta = line.Vec.angle
                 axis_label += f'\ntheta = {round(theta,2)}, Q = {round(q,3)}'
-            except:
+            except Exception:
                 pass
             ax.plot([s1.x, s2.x], [s1.y, s2.y], linestyle='-', c=c,
                     label=axis_label)

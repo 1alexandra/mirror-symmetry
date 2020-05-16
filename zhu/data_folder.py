@@ -2,19 +2,13 @@ import os
 import numpy as np
 
 from zhu import SymImage
-from zhu import MIN_CONTOUR_AREA, MULT_INIT
-from zhu import Q_SIGNAL, Q_PIXELS
 
 
 class DataFolder:
     def __init__(
         self,
         folder,
-        mult_coef=MULT_INIT,
-        single=True,
-        min_area=MIN_CONTOUR_AREA,
-        q_max_signal=Q_SIGNAL,
-        q_max_pixels=Q_PIXELS,
+        sym_image_kwargs={},
         number=None,
     ):
         self.folder = folder
@@ -22,31 +16,48 @@ class DataFolder:
         if number is not None and number < len(self.filenames):
             index = np.random.permutation(len(self.filenames))[:number]
             self.filenames = [self.filenames[i] for i in index]
-        self.mult_coef = mult_coef
-        self.single = single
-        self.min_area = min_area
-        self.q_max_signal = q_max_signal
-        self.q_max_pixels = q_max_pixels
+        self.si_kwargs = sym_image_kwargs
         self.cnt_dict = None
+        self.trained_neibs_hull = None
+        self.trained_neibs_appr = None
 
     Contours_dict = property()
+    Trained_neibs_hull = property()
+    Trained_neibs_appr = property()
 
     @Contours_dict.getter
     def Contours_dict(self):
         if self.cnt_dict is None:
             ans = {}
             for filename in self.filenames:
-                ans[filename] = SymImage(
-                    self.folder,
-                    filename,
-                    mult_coef=self.mult_coef,
-                    single=self.single,
-                    min_area=self.min_area,
-                    q_max_signal=self.q_max_signal,
-                    q_max_pixels=self.q_max_pixels,
-                )
+                ans[filename] = SymImage(self.folder, filename,
+                                         **self.si_kwargs)
             self.cnt_dict = ans
         return self.cnt_dict
+
+    @Trained_neibs_hull.getter
+    def Trained_neibs_hull(self):
+        if self.trained_neibs_hull is None:
+            if not len(self):
+                return None
+            neibs = [sc.Trained_neibs_hull for sc in self]
+            neibs = [n for n in neibs if n is not None]
+            if not len(neibs):
+                return None
+            self.trained_neibs_hull = max(neibs)
+        return self.trained_neibs_hull
+
+    @Trained_neibs_appr.getter
+    def Trained_neibs_appr(self):
+        if self.trained_neibs_appr is None:
+            if not len(self):
+                return None
+            neibs = [sc.Trained_neibs_appr for sc in self]
+            neibs = [n for n in neibs if n is not None]
+            if not len(neibs):
+                return None
+            self.trained_neibs_appr = max(neibs)
+        return self.trained_neibs_appr
 
     def __len__(self):
         cd = self.Contours_dict

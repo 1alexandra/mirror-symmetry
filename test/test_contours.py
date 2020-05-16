@@ -53,9 +53,9 @@ def test_contour():
 def test_sym_axis_list():
     u = [0.+5.j, 1.+1.j, 2.+5.j, 1.+7.j]
     q1, q2, q3 = 1, 2, 10
-    line1 = SymAxis(Point(u[0]), Point(u[1]), q1)
-    line2 = SymAxis(Point(u[0]), Point(u[2]), q2)
-    line3 = SymAxis(Point(u[0]), Point(u[3]), q3)
+    line1 = SymAxis(Point(u[0]), Point(u[1]), q1, u)
+    line2 = SymAxis(Point(u[0]), Point(u[2]), q2, u)
+    line3 = SymAxis(Point(u[0]), Point(u[3]), q3, u)
     axis_list = SymAxisList([line1, line2, line3])
     print('axis_list:', axis_list)
     assert axis_list[1] is line2
@@ -75,7 +75,7 @@ def test_sym_axis_list():
 
 def test_sym_contour():
     u = [0.+5.j, 1.-1.j, 2.+5.j, 1.+6.j]
-    sc = SymContour(u, q_max_pixels=0.1)
+    sc = SymContour(u, n_max_pixels=1)
     print('sc:', sc)
     ch = sc.Hull_based
     assert len(ch) == len(u) * 2
@@ -131,7 +131,7 @@ def test_fd():
     fd = FourierDescriptor(u)
     print('fd:', fd)
     N = len(u)
-    assert close_np(np.imag(fd.f_0), np.zeros(N))
+    assert close_np(np.imag(fd.f_0)[1:], np.zeros(N-1))
     assert not close_np(np.imag(fd.f_s(1)), np.zeros(N-1))
     assert close_np(np.imag(fd.f_s(3)), np.zeros(N-1))
     for beta in np.arange(0.01, 1.01, 0.01):

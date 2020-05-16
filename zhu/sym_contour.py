@@ -7,6 +7,8 @@ from zhu import SymAxisList
 
 from zhu import BETA_SIG, BETA_PIX, MULT_INIT, NEIB_HULL, NEIB_APPR
 from zhu import Q_SIGNAL, Q_PIXELS
+from zhu import N_MAX_SIGNAL, N_MAX_PIXELS
+from zhu import USE_HULL
 
 
 class SymContour(Contour):
@@ -19,7 +21,11 @@ class SymContour(Contour):
         beta_signal=BETA_SIG,
         beta_pixels=BETA_PIX,
         q_max_signal=Q_SIGNAL,
-        q_max_pixels=Q_PIXELS
+        q_max_pixels=Q_PIXELS,
+        n_max_signal=N_MAX_SIGNAL,
+        n_max_pixels=N_MAX_PIXELS,
+        use_hull=USE_HULL,
+        train_neibs=False,
     ):
         super().__init__(u, mult_coef)
         self.neibs_hull = neibs_hull
@@ -28,22 +34,31 @@ class SymContour(Contour):
         self.beta_pix = beta_pixels
         self.q_max_sig = q_max_signal
         self.q_max_pix = q_max_pixels
+        self.n_max_sig = n_max_signal
+        self.n_max_pix = n_max_pixels
+        self.use_hull = use_hull
+        self.train_neibs = train_neibs
+
         self.scaler = Scaler(self.Pixels)
         self.hull_based = None
         self.approximate = None
         self.axis_list = None
         self.sym_measure = None
+        self.trained_neibs_hull = None
+        self.trained_neibs_appr = None
 
     Hull_based = property()
     Approximate = property()
     Axis_list = property()
     Sym_measure = property()
+    Trained_neibs_hull = property()
+    Trained_neibs_appr = property()
 
     @Hull_based.getter
     def Hull_based(self):
         if self.hull_based is None:
-            if self.neibs_hull is None:
-                return np.arange(len(self.signal))
+            if self.neibs_hull is None or not self.use_hull:
+                return SymAxisList(None, self.scaler)
             ch = self.Convex_hull
             vs = np.vstack((ch.origin, ch.Edge_middles)).T.ravel()
             c = Point(self.Centroid)
@@ -58,8 +73,9 @@ class SymContour(Contour):
             self.approximate = lines.refinement(
                 self.Signal,
                 self.neibs_hull,
-                self.beta_sig
-            )
+                self.beta_sig,
+                train=self.train_neibs,
+            ).select(self.q_max_sig, self.n_max_sig)
         return self.approximate
 
     @Axis_list.getter
@@ -69,8 +85,9 @@ class SymContour(Contour):
             self.axis_list = lines.refinement(
                 self.Pixels,
                 self.neibs_appr,
-                self.beta_pix
-            ).select(self.q_max_pix)
+                self.beta_pix,
+                train=self.train_neibs,
+            ).select(self.q_max_pix, self.n_max_pix)
         return self.axis_list
 
     @Sym_measure.getter
@@ -79,6 +96,22 @@ class SymContour(Contour):
             if len(self.Axis_list):
                 self.sym_measure = self.Axis_list[0].q
         return self.sym_measure
+
+    @Trained_neibs_hull.getter
+    def Trained_neibs_hull(self):
+        if self.trained_neibs_hull is None:
+            if not len(self):
+                return None
+            self.trained_neibs_hull = self.Hull_based.neibs_trained
+        return self.trained_neibs_hull
+
+    @Trained_neibs_appr.getter
+    def Trained_neibs_appr(self):
+        if self.trained_neibs_appr is None:
+            if not len(self):
+                return None
+            self.trained_neibs_appr = self.Approximate.neibs_trained
+        return self.trained_neibs_appr
 
     def symmetrical(self):
         if self.Sym_measure is None:

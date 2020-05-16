@@ -13,7 +13,6 @@ from zhu.draw_tools import save_plot
 
 from zhu import CMAP_OTHER
 from zhu import Q_MAX_MULT
-from zhu import Q_SIGNAL, Q_PIXELS
 
 
 class Subploter:
@@ -37,15 +36,16 @@ class Subploter:
         d = ContourDrawer(sym_cnt)
         if self.multiple:
             q = sym_cnt.Sym_measure
-            cmap = choose_cmap(sym_cnt.symmetrical() and self.cmap_changing)
+            cmap = choose_cmap(sym_cnt.symmetrical(),
+                               change=self.cmap_changing)
             return [(d.draw(sym_cnt.Axis_list), q, cmap)]
         else:
             ans = []
             for sym_axis in sym_cnt.Axis_list:
                 img = d.draw([sym_axis])
                 q = sym_axis.q
-                cmap = choose_cmap(
-                    q < sym_cnt.q_max_pix and self.cmap_changing, None)
+                cmap = choose_cmap(q < sym_cnt.q_max_pix,
+                                   change=self.cmap_changing)
                 ans.append((img, q, cmap))
                 if self.force_single_axis:
                     break
@@ -53,22 +53,22 @@ class Subploter:
 
     def image(self, sym_image, last_cmap=None, q_max=np.inf):
         ans = []
-        last_cmap = last_cmap if not self.multiple else None
-        cmap = last_cmap
         for cnt in sym_image:
             cnt_res = self.contour(cnt)
             tail = len(cnt_res)
             for i in range(tail):
                 img, q, cmap = cnt_res[i]
                 if i == 0 or q < q_max or not self.force_single_axis:
-                    if cmap != CMAP_OTHER:
-                        cmap = choose_cmap(True, last_cmap)
+                    cmap = choose_cmap(cmap != CMAP_OTHER, last_cmap,
+                                       self.cmap_changing)
                     cnt_res[i] = img, q, cmap
                 else:
                     tail = i
                     break
-            if not self.multiple:
+            if not self.multiple and self.cmap_changing:
                 last_cmap = cmap
+            else:
+                last_cmap = None
             ans += cnt_res[:tail]
         return ans
 
@@ -77,7 +77,7 @@ class Subploter:
         last_cmap = None
         data = [cs for cs in data_folder if cs.Sym_measure is not None]
         q_max = max([cs.Sym_measure for cs in data]) * q_max_mult
-        if data_folder.single or force_sort:
+        if len(data_folder) > 0 and data_folder[0].single or force_sort:
             data.sort(key=lambda x: x.Sym_measure)
         for sym_image in data:
             cur = self.image(sym_image, last_cmap, q_max)
@@ -93,8 +93,7 @@ class Subploter:
         res_folder='../subploter_results',
         format_='eps',
         force_sort=True,
-        single=True,
-        data_folder_kwargs={},
+        sym_image_kwargs={},
         log=True,
     ):
         if subfolders is None:
@@ -105,7 +104,7 @@ class Subploter:
                 start = time()
             path = main_folder + '/' + folder
             n = None if self.rows is None else self.cols * self.rows
-            df = DataFolder(path, **data_folder_kwargs, number=n)
+            df = DataFolder(path, sym_image_kwargs=sym_image_kwargs, number=n)
             self.plot(self.folder(df, force_sort=force_sort))
             save_plot(
                 folder.split('/')[-1],

@@ -77,9 +77,9 @@ class ResultWriter:
         self,
         main_folder,
         subfolders=None,
+        sym_image_kwargs={},
         res_folder='../writer_results',
         format_='txt',
-        single=True,
         log=True
     ):
         if subfolders is None:
@@ -90,7 +90,8 @@ class ResultWriter:
             if log:
                 print(folder)
                 start = time()
-            df = DataFolder(main_folder + '/' + folder, single=single)
+            df = DataFolder(main_folder + '/' + folder,
+                            sym_image_kwargs=sym_image_kwargs)
             text = self.to_text(self.folder(df))
             res_path = res_folder + '/' + folder.split('/')[-1] + '.' + format_
             with open(res_path, 'w+') as f:

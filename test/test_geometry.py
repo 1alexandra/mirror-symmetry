@@ -102,7 +102,7 @@ def test_axis_limit():
 def test_symaxis():
     z1, z2 = 0+0j, 1+1j
     q = 5.0
-    s = SymAxis(Point(z1), Point(z2), q)
+    s = SymAxis(Point(z1), Point(z2), q, None)
     print('s:', s)
     assert s.q == q
 

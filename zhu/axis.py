@@ -81,6 +81,16 @@ class Axis:
             i1, i2 = i2, i1
         return i1, i2
 
+    def on_line_ind(self, u):
+        d = self.distance(u)
+        d_min = np.min(d)
+        u_next = np.roll(u, 1)
+        eps = np.min(np.abs(u-u_next))
+        ind = np.arange(len(u))[d < d_min + eps].tolist()
+        i1, i2 = self.vertexes_ind(u)
+        ind += [i1, i2]
+        return ind
+
     def vertexes(self, u):
         i1, i2 = self.vertexes_ind(u)
         u1, u2 = Point(u[i1]), Point(u[i2])
