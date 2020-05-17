@@ -58,7 +58,7 @@ class Subploter:
             tail = len(cnt_res)
             for i in range(tail):
                 img, q, cmap = cnt_res[i]
-                if i == 0 or q < q_max or not self.force_single_axis:
+                if i == 0 or (q < q_max and self.force_single_axis):
                     cmap = choose_cmap(cmap != CMAP_OTHER, last_cmap,
                                        self.cmap_changing)
                     cnt_res[i] = img, q, cmap
