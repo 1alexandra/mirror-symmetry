@@ -12,7 +12,8 @@ class DataFolder:
         number=None,
     ):
         self.folder = folder
-        self.filenames = os.listdir(path='./' + folder)
+        path = './' + folder if not folder.startswith('.') else folder
+        self.filenames = os.listdir(path=path)
         if number is not None and number < len(self.filenames):
             index = np.random.permutation(len(self.filenames))[:number]
             self.filenames = [self.filenames[i] for i in index]
