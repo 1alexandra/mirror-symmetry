@@ -29,7 +29,7 @@ from zhu.sym_contour import SymContour
 from zhu.sym_image import SymImage
 
 from zhu.data_folder import DataFolder
-from zhu.drawer import ContourDrawer
+from zhu.drawer import SymContourDrawer
 from zhu.subploter import Subploter
 from zhu.result_writer import ResultWriter
 
@@ -38,7 +38,7 @@ classes = [
     Axis,
     Binarizer,
     Contour,
-    ContourDrawer,
+    SymContourDrawer,
     DataFolder,
     FourierDescriptor,
     Point,

@@ -32,6 +32,7 @@ class SymImage:
         self.u_list = None
         self.trained_neibs_hull = None
         self.trained_neibs_appr = None
+        self.rm_binary = False
 
     Contours_list = property()
     Sym_measure = property()
@@ -84,12 +85,12 @@ class SymImage:
         cl = self.Contours_list
         return len(cl)
 
-    def create_txt(self, rm=True):
+    def create_txt(self):
         tmp_name = self.tmp_folder + '/' + self.name
         bmp_path = tmp_name + '.bmp'
         self.binarizer.create_mono_bmp(self.img_path, bmp_path)
         subprocess.run([DIMA_BORDERS_EXE, tmp_name])
-        if rm:
+        if self.rm_binary:
             try:
                 os.remove(bmp_path)
             except FileNotFoundError:

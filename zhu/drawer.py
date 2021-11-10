@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import cv2
+from PIL import Image
 
 from zhu import Point, Axis
 from zhu import Contour
@@ -12,6 +13,8 @@ from zhu.tools import round_complex, join_neibs
 from zhu.draw_tools import get_box
 from zhu.draw_tools import save_plot
 from zhu.draw_tools import prepare_scene
+from zhu.draw_tools import imread_bw
+
 from other.rgb import MplColorHelper
 
 
@@ -77,7 +80,7 @@ def draw_complex_contour(u, axis_list=[]):
     return img
 
 
-class ContourDrawer:
+class SymContourDrawer:
     def __init__(
         self,
         cnt,
@@ -187,7 +190,7 @@ class ContourDrawer:
             neibs = self.cnt.neibs_hull
         c = self.cnt.Centroid
         ch = self.cnt.Convex_hull
-        d = ContourDrawer(
+        d = SymContourDrawer(
             ch,
             width=self.width,
             height=self.height,
@@ -213,7 +216,7 @@ class ContourDrawer:
         plt.plot(np.real(v_neibs), np.imag(v_neibs), self.hull_neibs_marker,
                  label=label + 'neibs of axis points')
         n1 = len(u)
-        n2 = len(v)+len(v_neibs)
+        n2 = len(v) + len(v_neibs)
         plt.grid()
         plt.title(title + f', N(signal) = {n1}, N(axis points) = {n2}')
 
@@ -226,7 +229,7 @@ class ContourDrawer:
         fd = FourierDescriptor(self.cnt.Signal)
         u = fd.smoothed(beta)
         cnt = SymContour(u, mult_coef=1)
-        d = ContourDrawer(
+        d = SymContourDrawer(
             cnt,
             width=self.width,
             height=self.height,
@@ -303,3 +306,15 @@ class ContourDrawer:
 
     def __str__(self):
         return f'Drawer for {self.cnt}'
+
+
+def draw_silhouettes(sym_image, save_path=None):
+    origin_bw = imread_bw(sym_image.img_path)
+    board = np.zeros(origin_bw.shape)
+    for cnt in sym_image:
+        cnt_cv = cnt.Contour_cv
+        board = cv2.fillPoly(board, pts=[cnt_cv], color=(255, 255, 255))
+    if save_path is not None:
+        im = Image.fromarray(board[::-1].astype(np.uint8))
+        im.save(save_path)
+    return board

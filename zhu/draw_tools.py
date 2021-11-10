@@ -3,10 +3,23 @@ import os
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.pylab as pylab
+import cv2
+from PIL import Image
 
 from zhu import Point
 
 from zhu import CMAP_DEFAULT, CMAP_ALTERNATIVE, CMAP_OTHER
+
+
+def imread_bw(image_path):
+    if not image_path.endswith('.gif'):
+        return cv2.imread(image_path, 0)
+    img = Image.open(image_path)
+    tmp_path = os.path.splitext(image_path)[0] + '.bmp'
+    img.save(tmp_path, 'BMP')
+    img = cv2.imread(tmp_path, 0)
+    os.remove(tmp_path)
+    return img
 
 
 def prepare_scene(width=9, height=6):

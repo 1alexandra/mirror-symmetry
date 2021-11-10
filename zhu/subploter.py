@@ -4,12 +4,13 @@ from time import time
 import numpy as np
 from matplotlib import pyplot as plt
 
-from zhu import ContourDrawer
+from zhu import SymContourDrawer
 from zhu import DataFolder
 
 from zhu.draw_tools import imshow_bw
 from zhu.draw_tools import choose_cmap
 from zhu.draw_tools import save_plot
+from zhu.drawer import draw_silhouettes
 
 from zhu import CMAP_OTHER
 from zhu import Q_MAX_MULT
@@ -33,7 +34,7 @@ class Subploter:
         self.cmap_changing = cmap_changing
 
     def contour(self, sym_cnt):
-        d = ContourDrawer(sym_cnt)
+        d = SymContourDrawer(sym_cnt)
         if self.multiple:
             q = sym_cnt.Sym_measure
             cmap = choose_cmap(sym_cnt.symmetrical(),
@@ -52,6 +53,10 @@ class Subploter:
             return ans
 
     def image(self, sym_image, last_cmap=None, q_max=np.inf):
+        bmp_path = sym_image.tmp_folder + '/' \
+            + sym_image.name + '_silhouettes' + '.bmp'
+        draw_silhouettes(sym_image, bmp_path)
+
         ans = []
         for cnt in sym_image:
             cnt_res = self.contour(cnt)

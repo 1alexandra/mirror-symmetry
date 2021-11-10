@@ -4,23 +4,15 @@ import numpy as np
 import cv2
 from PIL import Image
 
+from zhu.draw_tools import imread_bw
+
 
 class Binarizer:
     def __init__(self, gauss=0):
         self.gauss = 0
 
-    def imread_bw(self, image_path):
-        if not image_path.endswith('.gif'):
-            return cv2.imread(image_path, 0)
-        img = Image.open(image_path)
-        tmp_path = os.path.splitext(image_path)[0] + '.bmp'
-        img.save(tmp_path, 'BMP')
-        img = cv2.imread(tmp_path, 0)
-        os.remove(tmp_path)
-        return img
-
     def binarize(self, image_path):
-        img = self.imread_bw(image_path)
+        img = imread_bw(image_path)
         if img is None:
             return None
         if self.gauss:
