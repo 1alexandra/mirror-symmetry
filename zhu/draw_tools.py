@@ -42,16 +42,18 @@ def save_plot(name, format_='png', res_folder='../plot_results'):
     plt.savefig(path, format=format_, bbox_inches='tight')
 
 
-def imshow_bw(img, q=None, cmap=CMAP_DEFAULT, ax=None):
+def imshow_bw(img, q=None, cmap=CMAP_DEFAULT, ax=None, inverse=True):
+    if inverse:
+        img = 255 - img
     title = f'Q = {round(q, 3)}' if q is not None else ''
     if ax is None:
         plt.title(title)
         plt.xticks([])
         plt.yticks([])
-        plt.imshow(255 - img, cmap=cmap)
+        plt.imshow(img, cmap=cmap)
     else:
         ax.set_title(title, fontsize=30)
-        ax.imshow(255 - img, cmap=cmap)
+        ax.imshow(img, cmap=cmap)
 
 
 def choose_cmap(is_sym, last_cmap=None, change=False):

@@ -104,10 +104,12 @@ class Subploter:
         if subfolders is None:
             subfolders = os.listdir(path='./' + main_folder)
         for folder in subfolders:
+            path = main_folder + '/' + folder
+            if not os.path.isdir(path):
+                continue
             if log:
                 print(folder)
                 start = time()
-            path = main_folder + '/' + folder
             n = None if self.rows is None else self.cols * self.rows
             df = DataFolder(path, sym_image_kwargs=sym_image_kwargs, number=n)
             self.plot(self.folder(df, force_sort=force_sort))

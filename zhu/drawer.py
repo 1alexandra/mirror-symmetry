@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from matplotlib import pyplot as plt
 import cv2
@@ -310,11 +311,13 @@ class SymContourDrawer:
 
 def draw_silhouettes(sym_image, save_path=None):
     origin_bw = imread_bw(sym_image.img_path)
-    board = np.zeros(origin_bw.shape)
-    for cnt in sym_image:
+    for i, cnt in enumerate(sym_image):
         cnt_cv = cnt.Contour_cv
+        board = np.zeros(origin_bw.shape)
         board = cv2.fillPoly(board, pts=[cnt_cv], color=(255, 255, 255))
-    if save_path is not None:
-        im = Image.fromarray(board[::-1].astype(np.uint8))
-        im.save(save_path)
+        if save_path is not None:
+            name, ext = os.path.splitext(save_path)
+            cur_save_path = name + '_' + str(i + 1) + '.' + ext
+            im = Image.fromarray((255 - board[::-1].astype(np.uint8)))
+            im.save(cur_save_path)
     return board

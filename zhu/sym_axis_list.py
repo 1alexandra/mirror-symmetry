@@ -61,7 +61,7 @@ class SymAxisList:
         lines = []
         for i in inds_new:
             p, q, theta = u[i], q_list[i], thetas[i]
-            p1, p2 = Point(p), Point(p + 10*np.exp(1j * theta))
+            p1, p2 = Point(p), Point(p + 10 * np.exp(1j * theta))
             lines.append(SymAxis(p1, p2, q, u))
         return SymAxisList(lines, self.scaler)
 
@@ -93,7 +93,7 @@ class SymAxisList:
     def train_neibs(self, inds_old, inds_new, n):
         i0 = np.array(inds_old).reshape((-1, 1))
         i1 = np.array(inds_new).reshape((1, -1))
-        d0 = np.abs(i1-i0)
+        d0 = np.abs(i1 - i0)
         d1 = n - d0
         d0[d0 > d1] = d1[d0 > d1]
         self.neibs_trained = np.max(np.min(d0, axis=0)) / n
@@ -108,6 +108,6 @@ class SymAxisList:
 
     def __str__(self):
         return '\n'.join([
-            f'SymAxisList with lines=',
+            'SymAxisList with lines=',
             *[str(line) for line in self.lines]
         ])

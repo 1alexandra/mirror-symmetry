@@ -136,7 +136,7 @@ class Contour:
     def __str__(self):
         return '\n'.join([
             '=========',
-            f'Contour:',
+            'Contour:',
             f'origin = {self.origin}',
             f'mult = {self.mult_coef}',
             f'Area = {self.Area}',
