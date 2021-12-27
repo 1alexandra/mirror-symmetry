@@ -33,6 +33,8 @@ from zhu.drawer import SymContourDrawer
 from zhu.subploter import Subploter
 from zhu.result_writer import ResultWriter
 
+from zhu.curve_fit import BezierCurve
+
 
 classes = [
     Axis,
@@ -50,6 +52,7 @@ classes = [
     SymContour,
     SymImage,
     Vector,
+    BezierCurve,
 ]
 
 consants = [
