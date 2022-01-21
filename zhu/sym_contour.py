@@ -28,6 +28,7 @@ class SymContour(Contour):
         train_neibs=False,
     ):
         super().__init__(u, mult_coef)
+
         self.neibs_hull = neibs_hull
         self.neibs_appr = neibs_approximate
         self.beta_sig = beta_signal

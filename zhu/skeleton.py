@@ -3,51 +3,16 @@ import numpy as np
 import cv2
 
 from zhu.curve_fit import BezierCurve
+from zhu.sym_contour import SymContour
 from zhu.draw_tools import imread_bw
+
+from zhu.vertex import Vertex
 
 
 def bw_to_rgb(origin):
     rep = np.repeat(origin, 3, axis=1)
     new_shape = (*origin.shape, 3)
     return rep.reshape(new_shape)
-
-
-class Vertex:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.z = x + 1j * y
-
-        self.draw_kwargs = {
-            'color': (255, 255, 0),
-            'radius': 5,
-            'thickness': -1,
-        }
-
-    @property
-    def coord_cv(self):
-        return (int(self.x), int(self.y))
-
-    def __eq__(self, other):
-        return self.coord_cv == other.coord_cv
-
-    def __hash__(self):
-        return hash(self.coord_cv)
-
-    def __repr__(self):
-        return f'Vertex {self.coord_cv}'
-
-    def distance(self, other):
-        dx = self.x - other.x
-        dy = self.y - other.y
-        return (dx ** 2 + dy ** 2) ** 0.5
-
-    def draw(self, board):
-        board = cv2.circle(
-            board, self.coord_cv, **self.draw_kwargs)
-        if type(board) is cv2.UMat:
-            board = board.get()
-        return board
 
 
 class SkeletonVertex(Vertex):
@@ -118,9 +83,10 @@ class SkeletonEdge:
 
 
 class Skeleton:
-    def __init__(self, edge_list, origin_path):
+    def __init__(self, edge_list, origin_path, contour=None):
         self.origin_path = origin_path
         self.origin = imread_bw(origin_path)
+        self.contour = contour
 
         self.edge_list = edge_list
         self.vertexes = self.graph_vertexes(edge_list)
@@ -163,7 +129,7 @@ class Skeleton:
 
     def draw(self, board=None):
         if board is None:
-            board = bw_to_rgb(self.origin)[::-1]
+            board = cv2.imread(self.origin_path)[::-1]
         for edge in self.edge_list:
             board = edge.draw(board)
             for v in (edge.v0, edge.v1):
@@ -173,8 +139,8 @@ class Skeleton:
 
 
 class LeaveSkeleton(Skeleton):
-    def __init__(self, edge_list, origin_path):
-        super().__init__(edge_list, origin_path)
+    def __init__(self, edge_list, origin_path, contour=None):
+        super().__init__(edge_list, origin_path, contour)
 
         self.stalkity_angle = np.pi / 180 * 7.5
         self.stalkity_radius = 0.1
@@ -182,6 +148,8 @@ class LeaveSkeleton(Skeleton):
         self.curve_points_count = 10
         self.curve_points_show_count = 50
         self.curve_degree = 2
+
+        self.sc_kwargs = {}
 
         self._center = None
         self._stalk = None
@@ -191,6 +159,7 @@ class LeaveSkeleton(Skeleton):
         self._body_curve = None
         self._leave_body_edge_length = None
         self._stalk_edges_final = None
+        self._sym_contour = None
 
         self.draw_kwargs = {
             'text': {
@@ -391,8 +360,7 @@ class LeaveSkeleton(Skeleton):
     @property
     def leave_body_length(self):
         assert self.body_curve is not None
-        return self.body_curve.bezier_curve_length(
-            n=self.curve_points_show_count)
+        return self.body_curve.length
 
     @property
     def leave_stalk_length(self):
@@ -406,6 +374,19 @@ class LeaveSkeleton(Skeleton):
     @property
     def leave_stalk_length_part(self):
         return self.leave_stalk_length / self.leave_body_length
+
+    @property
+    def SymContour(self):
+        assert self.contour is not None
+        if self._sym_contour is None:
+            s = self.contour.origin
+            vs = [Vertex(np.real(s_), np.imag(s_)) for s_ in s]
+            coords = [self.body_curve.coord(v) for v in vs]
+            x, y = np.array(coords).T
+            u = x + 1j * y
+            u = u[x > 0]
+            self._sym_contour = SymContour(u, **self.sc_kwargs)
+        return self._sym_contour
 
     def draw(self, board=None):
         board = super().draw(board)
@@ -427,14 +408,15 @@ class LeaveSkeleton(Skeleton):
             board = vertex.draw(board)
 
         for i, value in enumerate([
-            self.leave_stalk_length_part,
+            # self.leave_stalk_length_part,
+            self.SymContour.Sym_measure,
         ]):
             board = board[::-1]
             corner = (
                 int(self.stalk_tail.x + 10),
                 board.shape[0] - (int(self.stalk_tail.y) + 10 * (i + 1)))
             board = cv2.putText(
-                board, str(round(value, 2)), corner,
+                board, str(round(value, 3)), corner,
                 **self.draw_kwargs['text'])
             if type(board) is cv2.UMat:
                 board = board.get()

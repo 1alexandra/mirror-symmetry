@@ -19,12 +19,13 @@ class SymImage:
         binarizer_object=None,
         gauss=0
     ):
-        self.img_path = data_folder + '/' + image_filename
-        self.tmp_folder = tmp_folder or data_folder + '/preprocessed'
+        self.img_path = os.path.join(data_folder, image_filename)
+        self.tmp_folder = tmp_folder or os.path.join(
+            data_folder, 'preprocessed')
         if not os.path.isdir(self.tmp_folder):
             os.mkdir(self.tmp_folder)
-        self.name, _ = os.path.splitext(image_filename)
-        self.txt_path = self.tmp_folder + '/' + self.name + '.txt'
+        self.name = os.path.basename(image_filename)
+        self.txt_path = os.path.join(self.tmp_folder, self.name + '.txt')
         self.sc_kwargs = sym_contour_kwargs
         self.single = single
         self.min_area = min_area
@@ -121,8 +122,8 @@ class SymImage:
         if not len(ps):
             return []
         ans = [c for c in ps if c.Area >= self.min_area]
+        ans.sort(key=lambda x: x.Sym_measure)
         if not self.single:
-            ans.sort(key=lambda x: x.Sym_measure)
             return ans
         return [max(ans, key=len)]
 

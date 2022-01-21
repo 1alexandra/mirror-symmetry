@@ -4,6 +4,8 @@ CMAP_DEFAULT = 'magma'
 CMAP_ALTERNATIVE = 'inferno'
 CMAP_OTHER = 'gray'
 DIMA_BORDERS_EXE = './../DimaBorders/release/border.exe'
+PATTERN_SPECTRUM_EXE = \
+    '..\\PatternSpectrum\\build-PatternSpectrumConsole-Desktop_Qt_6_2_0_MinGW_64_bit-Debug\\debug\\PatternSpectrumConsole.exe'
 EPS = 1e-10
 MIN_CONTOUR_AREA = 100.0
 MIN_CONTOUR_N = 50
