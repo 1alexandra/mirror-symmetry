@@ -33,7 +33,7 @@ class Vertex:
 
     def draw(self, board):
         board = cv2.circle(
-            board, self.coord_cv, **self.draw_kwargs)
+            cv2.UMat(board), self.coord_cv, **self.draw_kwargs)
         if type(board) is cv2.UMat:
             board = board.get()
         return board

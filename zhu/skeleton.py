@@ -76,7 +76,7 @@ class SkeletonEdge:
         end_point = self.v1.coord_cv
 
         board = cv2.line(
-            board, start_point, end_point, **self.draw_kwargs)
+            cv2.UMat(board), start_point, end_point, **self.draw_kwargs)
         if type(board) is cv2.UMat:
             board = board.get()
         return board
@@ -160,6 +160,7 @@ class LeaveSkeleton(Skeleton):
         self._leave_body_edge_length = None
         self._stalk_edges_final = None
         self._sym_contour = None
+        self._sym_contour_straight = None
 
         self.draw_kwargs = {
             'text': {
@@ -170,6 +171,12 @@ class LeaveSkeleton(Skeleton):
                 'lineType': 2,
             }
         }
+
+    @property
+    def corner(self):
+        x = [v.x for v in self.vertexes]
+        y = [v.y for v in self.vertexes]
+        return min(x), min(y)
 
     @property
     def center_vertex(self):
@@ -383,10 +390,23 @@ class LeaveSkeleton(Skeleton):
             vs = [Vertex(np.real(s_), np.imag(s_)) for s_ in s]
             coords = [self.body_curve.coord(v) for v in vs]
             x, y = np.array(coords).T
-            u = x + 1j * y
+            u = s
             u = u[x > 0]
             self._sym_contour = SymContour(u, **self.sc_kwargs)
         return self._sym_contour
+
+    @property
+    def StraightenedSymContour(self):
+        assert self.contour is not None
+        if self._sym_contour_straight is None:
+            s = self.contour.origin
+            vs = [Vertex(np.real(s_), np.imag(s_)) for s_ in s]
+            coords = [self.body_curve.coord(v) for v in vs]
+            x, y = np.array(coords).T
+            u = x + 1j * y
+            u = u[x > 0]
+            self._sym_contour_straight = SymContour(u, **self.sc_kwargs)
+        return self._sym_contour_straight
 
     def draw(self, board=None):
         board = super().draw(board)
@@ -406,17 +426,29 @@ class LeaveSkeleton(Skeleton):
             vertex.draw_kwargs['color'] = (255, 0, 255)
             vertex.draw_kwargs['radius'] = 15
             board = vertex.draw(board)
+            
+        corner_x, corner_y = self.corner
+        max_y = int(board.shape[0] - corner_y + 100 * 4)
+        if max_y > board.shape[0]:
+            corner_y = 400
 
-        for i, value in enumerate([
-            # self.leave_stalk_length_part,
-            self.SymContour.Sym_measure,
+        for i, (name, value) in enumerate([
+            ('Stalk', self.leave_stalk_length_part),
+            ('Asym )', self.SymContour.Sym_measure),
+            ('Asym |', self.StraightenedSymContour.Sym_measure),
         ]):
             board = board[::-1]
             corner = (
-                int(self.stalk_tail.x + 10),
-                board.shape[0] - (int(self.stalk_tail.y) + 10 * (i + 1)))
+                int(corner_x),
+                int(board.shape[0] - corner_y + 100 * (i + 1)))
+            text = f'{round(value, 3)}, {name}'
+            kwargs = self.draw_kwargs['text'].copy()
+            kwargs['thickness'] = kwargs['thickness'] * 2
+            kwargs['color'] = (255, 255, 255)
             board = cv2.putText(
-                board, str(round(value, 3)), corner,
+                cv2.UMat(board), text, corner, **kwargs)
+            board = cv2.putText(
+                cv2.UMat(board), text, corner,
                 **self.draw_kwargs['text'])
             if type(board) is cv2.UMat:
                 board = board.get()

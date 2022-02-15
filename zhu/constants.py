@@ -3,9 +3,9 @@ BETA_PIX = 1.0
 CMAP_DEFAULT = 'magma'
 CMAP_ALTERNATIVE = 'inferno'
 CMAP_OTHER = 'gray'
-DIMA_BORDERS_EXE = './../DimaBorders/release/border.exe'
+DIMA_BORDERS_EXE = './../DimaBorders/DimaBorders.app/Contents/MacOS/DimaBorders'
 PATTERN_SPECTRUM_EXE = \
-    '..\\PatternSpectrum\\build-PatternSpectrumConsole-Desktop_Qt_6_2_0_MinGW_64_bit-Debug\\debug\\PatternSpectrumConsole.exe'
+    './../PatternSpectrum/PattersSpectrum.app/Contents/MacOS/pure_PattersSpectrum'
 EPS = 1e-10
 MIN_CONTOUR_AREA = 100.0
 MIN_CONTOUR_N = 50
