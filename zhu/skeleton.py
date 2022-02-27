@@ -157,6 +157,8 @@ class LeaveSkeleton(Skeleton):
         self._leave_head = None
         self._body_vertexes = None
         self._body_curve = None
+        self._curve_coords = None
+        self._body_mask = None
         self._leave_body_edge_length = None
         self._stalk_edges_final = None
         self._sym_contour = None
@@ -383,15 +385,73 @@ class LeaveSkeleton(Skeleton):
         return self.leave_stalk_length / self.leave_body_length
 
     @property
+    def CurveCoords(self):
+        if self._curve_coords is None:
+            s = self.contour.origin
+            vs = [Vertex(np.real(s_), np.imag(s_)) for s_ in s]
+            cs = [self.body_curve.coord(v) for v in vs]
+            re, im = np.array(cs).T
+            self._curve_coords = re + 1j * im
+        return self._curve_coords
+
+    @property
+    def BodyMask(self):
+        if self._body_mask is None:
+            cs = self.CurveCoords
+            r = np.abs(cs)
+            upper = (np.imag(cs) >= 0)
+            lower = (np.imag(cs) <= 0)
+            upper_ind = np.nonzero(upper)[0]
+            lower_ind = np.nonzero(lower)[0]
+
+            u_i = upper_ind[np.argmin(r[upper_ind])]
+            l_i = lower_ind[np.argmin(r[lower_ind])]
+
+            if u_i <= l_i:
+                right = l_i - u_i
+            else:
+                right = len(cs) - u_i + l_i
+            left = len(cs) - right
+            if right < left:
+                u_i, l_i = l_i, u_i
+
+            if l_i < u_i:
+                body = np.concatenate((
+                    np.arange(l_i + 1),
+                    np.arange(u_i, len(cs))))
+            else:
+                body = np.arange(u_i, l_i + 1)
+            self._body_mask = body
+        return self._body_mask
+
+    def body_angles(self):
+        cs = self.CurveCoords
+        mask = self.BodyMask
+        cs = cs[mask]
+        x = np.real(cs)
+
+        upper = (np.imag(cs) >= 0) & (np.abs(cs) > self.leave_body_length / 4)
+        lower = (np.imag(cs) <= 0) & (np.abs(cs) > self.leave_body_length / 4)
+        upper_ind = np.nonzero(upper)[0]
+        lower_ind = np.nonzero(lower)[0]
+
+        u_i = upper_ind[np.argmin(x[upper_ind])]
+        l_i = lower_ind[np.argmin(x[lower_ind])]
+
+        u_z = cs[u_i]
+        l_z = cs[l_i]
+
+        u_phi = np.arctan2(u_z.imag, -u_z.real)
+        l_phi = np.arctan2(-l_z.imag, -l_z.real)
+        return u_phi, l_phi
+
+
+    @property
     def SymContour(self):
         assert self.contour is not None
         if self._sym_contour is None:
             s = self.contour.origin
-            vs = [Vertex(np.real(s_), np.imag(s_)) for s_ in s]
-            coords = [self.body_curve.coord(v) for v in vs]
-            x, y = np.array(coords).T
-            u = s
-            u = u[x > 0]
+            u = s[self.BodyMask]
             self._sym_contour = SymContour(u, **self.sc_kwargs)
         return self._sym_contour
 
@@ -399,12 +459,7 @@ class LeaveSkeleton(Skeleton):
     def StraightenedSymContour(self):
         assert self.contour is not None
         if self._sym_contour_straight is None:
-            s = self.contour.origin
-            vs = [Vertex(np.real(s_), np.imag(s_)) for s_ in s]
-            u = [self.body_curve.coord(v) for v in vs]
-            u = np.array(u)
-            u = u[u[:, 0] > 0]
-            u = u[:, 0] + 1j * u[:, 1]
+            u = self.CurveCoords[self.BodyMask]
 
             p0 = self.stalk_head.z
             p1 = self.leave_head.z
@@ -437,14 +492,17 @@ class LeaveSkeleton(Skeleton):
             board = vertex.draw(board)
             
         corner_x, corner_y = self.corner
-        max_y = int(board.shape[0] - corner_y + 100 * 4)
+        max_y = int(board.shape[0] - corner_y + 100 * 6)
         if max_y > board.shape[0]:
             corner_y = 400
 
+        u_phi, l_phi = self.body_angles()
+        phi = np.pi * 2 - u_phi - l_phi
         for i, (name, value) in enumerate([
-            ('Stalk', self.leave_stalk_length_part),
-            ('Asym )', self.SymContour.Sym_measure),
-            ('Asym |', self.StraightenedSymContour.Sym_measure),
+            ('Stalk/Length', self.leave_stalk_length_part),
+            ('Asym before', self.SymContour.Sym_measure),
+            ('Asym after', self.StraightenedSymContour.Sym_measure),
+            ('Angle', phi * 180 / np.pi),
         ]):
             board = board[::-1]
             corner = (
