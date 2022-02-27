@@ -24,7 +24,7 @@ class BezierCurve:
 
         self.draw_kwargs = {
             'color': (255, 0, 255),
-            'radius': 10,
+            'radius': 5,
             'thickness': -1,
         }
 

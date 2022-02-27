@@ -131,7 +131,7 @@ class Skeleton:
         if board is None:
             board = cv2.imread(self.origin_path)[::-1]
         for edge in self.edge_list:
-            board = edge.draw(board)
+            # board = edge.draw(board)
             for v in (edge.v0, edge.v1):
                 if len(v.neibs) != 2:
                     board = v.draw(board)
@@ -401,20 +401,29 @@ class LeaveSkeleton(Skeleton):
         if self._sym_contour_straight is None:
             s = self.contour.origin
             vs = [Vertex(np.real(s_), np.imag(s_)) for s_ in s]
-            coords = [self.body_curve.coord(v) for v in vs]
-            x, y = np.array(coords).T
-            u = x + 1j * y
-            u = u[x > 0]
+            u = [self.body_curve.coord(v) for v in vs]
+            u = np.array(u)
+            u = u[u[:, 0] > 0]
+            u = u[:, 0] + 1j * u[:, 1]
+
+            p0 = self.stalk_head.z
+            p1 = self.leave_head.z
+            vec = p1 - p0
+            phi = np.arctan2(vec.imag, vec.real)
+
+            u = u * np.exp(1j * phi) + p0
             self._sym_contour_straight = SymContour(u, **self.sc_kwargs)
         return self._sym_contour_straight
 
     def draw(self, board=None):
         board = super().draw(board)
 
-        for edge in self.stalk_edges:
-            edge.draw_kwargs['color'] = (0, 0, 255)
-            board = edge.draw(board)
-
+        # for edge in self.stalk_edges:
+        #     edge.draw_kwargs['color'] = (0, 0, 255)
+        #     board = edge.draw(board)
+        self.SymContour.draw_kwargs['color'] = (0, 0, 255)
+        board =  self.SymContour.draw(board)
+        board = self.StraightenedSymContour.draw(board)
         board = self.body_curve.draw(board, n=self.curve_points_show_count)
 
         for vertex in (
@@ -453,5 +462,6 @@ class LeaveSkeleton(Skeleton):
             if type(board) is cv2.UMat:
                 board = board.get()
             board = board[::-1]
+
 
         return board

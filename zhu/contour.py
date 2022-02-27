@@ -28,6 +28,11 @@ class Contour:
         self.middles = None
         self.centroid = None
 
+        self.draw_kwargs = {
+            'color': (255, 0, 0),
+            'thickness': 5,
+        }
+
     Contour_cv = property()
     Area = property()
     Perimeter = property()
@@ -126,6 +131,21 @@ class Contour:
                     cur_step = step
                     break
         return np.array(w)
+
+    def draw(self, board):
+        cnt = self.Contour_cv
+        draw_kwargs = self.draw_kwargs.copy()
+        draw_kwargs['thickness'] = int(draw_kwargs['thickness'] * 2)
+        draw_kwargs['color'] = (255, 255, 255)
+        board = cv2.drawContours(
+            cv2.UMat(board), [cnt], 0,
+            **draw_kwargs)
+        board = cv2.drawContours(
+            cv2.UMat(board), [cnt], 0,
+            **self.draw_kwargs)
+        if type(board) is cv2.UMat:
+            board = board.get()
+        return board
 
     def __len__(self):
         return len(self.origin)

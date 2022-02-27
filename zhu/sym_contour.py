@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 from zhu import Point, Axis
 from zhu import Contour
@@ -118,6 +119,25 @@ class SymContour(Contour):
         if self.Sym_measure is None:
             return False
         return self.Sym_measure < self.q_max_pix
+
+    def draw(self, board):
+        board = super().draw(board)
+        if len(self.Axis_list) > 0:
+            axis = self.Axis_list[0]
+            z1, z2 = axis.vertexes(self.Pixels)
+            p1 = (int(z1.z.real), int(z1.z.imag))
+            p2 = (int(z2.z.real), int(z2.z.imag))
+
+            board = cv2.line(
+                cv2.UMat(board), p1, p2,
+                color=(255, 255, 255),
+                thickness=self.draw_kwargs['thickness']*2)
+
+            board = cv2.line(
+                cv2.UMat(board), p1, p2, **self.draw_kwargs)
+            if type(board) is cv2.UMat:
+                board = board.get()
+        return board
 
     def __str__(self):
         return '\n'.join([
